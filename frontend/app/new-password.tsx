@@ -1,5 +1,6 @@
 import React from "react";
 import useInputField from "@/hooks/useInputField";
+import InputField from "@/components/InputField";
 import { router } from "expo-router";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import {
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  TextInput,
 } from "react-native";
 
 const passwordValidation = (value: string) => {
@@ -88,27 +88,20 @@ export default function Reset() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>New password</Text>
             <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your new password"
-                  value={passwordField.value}
-                  onChangeText={passwordField.setValue}
-                  secureTextEntry
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Confirm Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Confirm your new password"
-                  value={confirmPasswordField.value}
-                  onChangeText={confirmPasswordField.setValue}
-                  secureTextEntry
-                />
-              </View>
+              <InputField
+                label="Password"
+                value={passwordField.value}
+                setValue={passwordField.setValue}
+                error={passwordField.error}
+                secureTextEntry
+              />
+              <InputField
+                label="Confirm Password"
+                value={confirmPasswordField.value}
+                setValue={confirmPasswordField.setValue}
+                error={confirmPasswordField.error}
+                secureTextEntry
+              />
 
               <TouchableOpacity
                 style={styles.signInButton}

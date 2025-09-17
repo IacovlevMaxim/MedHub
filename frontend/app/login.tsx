@@ -10,7 +10,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  TextInput,
   ScrollView,
 } from "react-native";
 import React from "react";
@@ -107,28 +106,19 @@ export default function Login() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign In</Text>
             <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email or Username</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  value={emailField.value}
-                  onChangeText={emailField.setValue}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  value={passwordField.value}
-                  onChangeText={passwordField.setValue}
-                  secureTextEntry
-                />
-              </View>
+              <InputField
+                label="Email or Username"
+                value={emailField.value}
+                setValue={emailField.setValue}
+                error={emailField.error}
+              />
+              <InputField
+                label="Password"
+                value={passwordField.value}
+                setValue={passwordField.setValue}
+                error={passwordField.error}
+                secureTextEntry
+              />
               <TouchableOpacity
                 style={styles.signInButton}
                 onPress={handleSubmit}

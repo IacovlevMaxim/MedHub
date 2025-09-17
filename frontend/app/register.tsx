@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import useInputField from "@/hooks/useInputField";
+import InputField from "@/components/InputField";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import { Link } from "expo-router";
@@ -147,62 +148,37 @@ export default function Register() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign Up</Text>
             <View style={styles.form}>
-              {/* Full Name */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Full Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your full name"
-                  value={nameField.value}
-                  onChangeText={nameField.setValue}
-                  autoCapitalize="words"
-                />
-              </View>
-              {/* IDNP */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>IDNP</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your IDNP"
-                  value={idnpField.value}
-                  onChangeText={idnpField.setValue}
-                  keyboardType="number-pad"
-                />
-              </View>
-              {/* Email */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  value={emailField.value}
-                  onChangeText={emailField.setValue}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
-              {/* Password */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Password</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your password"
-                  value={passwordField.value}
-                  onChangeText={passwordField.setValue}
-                  secureTextEntry
-                />
-              </View>
-              {/* Street */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Street</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your street"
-                  value={streetField.value}
-                  onChangeText={streetField.setValue}
-                />
-              </View>
+              <InputField
+                label="Full Name"
+                value={nameField.value}
+                setValue={nameField.setValue}
+                error={nameField.error}
+              />
+              <InputField
+                label="IDNP"
+                value={idnpField.value}
+                setValue={idnpField.setValue}
+                error={idnpField.error}
+              />
+              <InputField
+                label="Email"
+                value={emailField.value}
+                setValue={emailField.setValue}
+                error={emailField.error}
+              />
+              <InputField
+                label="Password"
+                value={passwordField.value}
+                setValue={passwordField.setValue}
+                error={passwordField.error}
+                secureTextEntry
+              />
+              <InputField
+                label="Street"
+                value={streetField.value}
+                setValue={streetField.setValue}
+                error={streetField.error}
+              />
 
               {/* Date of Birth */}
               <View style={styles.inputGroup}>

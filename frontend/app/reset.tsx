@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import useInputField from "@/hooks/useInputField";
+import InputField from "@/components/InputField";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
@@ -11,7 +12,6 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
-  TextInput,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
@@ -99,18 +99,12 @@ export default function Reset() {
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Send reset link</Text>
             <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Email</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter your email"
-                  value={emailField.value}
-                  onChangeText={emailField.setValue}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoCorrect={false}
-                />
-              </View>
+              <InputField
+                label="Email"
+                value={emailField.value}
+                setValue={emailField.setValue}
+                error={emailField.error}
+              />
 
               {sentLink && (
                 <Text style={{ color: "#4BB543", textAlign: "center" }}>
