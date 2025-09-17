@@ -1,6 +1,8 @@
-import InputField from "@/components/InputField";
-import { useAuth } from "@/hooks/useAuth";
+import React from "react";
 import useInputField from "@/hooks/useInputField";
+import InputField from "@/components/InputField";
+import { router } from "expo-router";
+import Icon from "react-native-vector-icons/FontAwesome5";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -9,18 +11,15 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
 } from "react-native";
-import React from "react";
-import { router } from "expo-router";
-import { Colors } from "@/constants/Colors";
+
 const passwordValidation = (value: string) => {
   if (value.length < 6) return "Password must be at least 6 characters.";
   return undefined;
 };
 
 export default function Reset() {
-  const auth = useAuth();
-
   const passwordField = useInputField({
     label: "Password",
     field: "password",
@@ -54,33 +53,10 @@ export default function Reset() {
     return true;
   };
 
-  const handleSubmit = async () => {
-    console.log("auth", auth);
-    if (validateForm()) {
-      // In a real app, you would authenticate with a server here
-      const res = await auth?.authFetch('/api/Auth/reset-password', {
-        fetchParams: { 
-          method: 'POST',
-          body: JSON.stringify({ 
-            //Should get email from activate link
-            email: "",
-            //Should get token from activate link
-            token: "",
-            
-            newPassword: passwordField.value
-          }) 
-        } 
-      })//.then(r => r.json());
-
-      if(res.status === 200) {
-        router.push('/activate');
-      } else {
-        Alert.alert("Error", "Failed to reset password. Please try again.");
-      }
-
-      // auth?.signIn();
-      // Navigation is handled by the AuthProvider in _layout.tsx
-    }
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+    // Immediately navigate to Activate screen upon setting the password
+    router.replace("/activate");
   };
 
   return (
@@ -88,30 +64,56 @@ export default function Reset() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.innerContainer}>
-        <View
-          style={{
-            marginBottom: 40,
-            marginLeft: 10,
-            marginRight: 10,
-            alignContent: "center",
-          }}
-        >
-          <Text style={styles.text}>Select a new password</Text>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.inner}>
+          <View style={styles.logoBox}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>
+                <Icon name="lock" color="#fff" size={28} />
+              </Text>
+            </View>
+            <Text style={styles.title}>Set a new password</Text>
+            <Text style={styles.subtitle}>
+              Choose a strong password and confirm it below
+            </Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>New password</Text>
+            <View style={styles.form}>
+              <InputField
+                label="Password"
+                value={passwordField.value}
+                setValue={passwordField.setValue}
+                error={passwordField.error}
+                secureTextEntry
+              />
+              <InputField
+                label="Confirm Password"
+                value={confirmPasswordField.value}
+                setValue={confirmPasswordField.setValue}
+                error={confirmPasswordField.error}
+                secureTextEntry
+              />
+
+              <TouchableOpacity
+                style={styles.signInButton}
+                onPress={handleSubmit}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.signInButtonText}>Set Password</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        <InputField {...passwordField} />
-
-        <InputField {...confirmPasswordField} />
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleSubmit}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.buttonText}>Send Reset Link</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -119,68 +121,92 @@ export default function Reset() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  innerContainer: {
-    flex: 1,
-    padding: 20,
+    backgroundColor: "#F5F6FA",
     justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
   },
-  header: {
+  inner: {
+    width: "100%",
+    maxWidth: 400,
+  },
+  logoBox: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    backgroundColor: "#4F8EF7",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  logoText: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "bold",
+  },
+  title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 40,
+    color: "#222",
+    marginBottom: 4,
     textAlign: "center",
   },
-  inputContainer: {
-    marginBottom: 20,
+  subtitle: {
+    color: "#888",
+    fontSize: 15,
+    textAlign: "center",
   },
-  inputLabel: {
-    color: "#fff",
-    marginBottom: 8,
-    fontSize: 16,
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+    color: "#222",
+  },
+  form: {
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 12,
+  },
+  label: {
+    fontSize: 14,
+    color: "#222",
+    marginBottom: 4,
+    fontWeight: "500",
   },
   input: {
-    backgroundColor: "#333",
+    height: 44,
+    backgroundColor: "#F5F6FA",
     borderRadius: 8,
-    padding: 15,
-    color: "#fff",
-    fontSize: 16,
     borderWidth: 1,
-    borderColor: Colors.light.button.secondary,
+    borderColor: "#e3e8f0",
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
-  inputError: {
-    borderColor: "#ff4d4d",
+  signInButton: {
+    backgroundColor: "#4F8EF7",
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 8,
   },
-  errorText: {
-    color: "#ff4d4d",
-    marginTop: 5,
-    fontSize: 14,
-  },
-  text: {
+  signInButtonText: {
     color: "#fff",
-    marginBottom: 20,
-    fontSize: 16,
-    textAlign: "center",
-  },
-  button: {
-    backgroundColor: Colors.light.text,
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: "gray",
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: Colors.light.background,
-    fontSize: 16,
     fontWeight: "bold",
+    fontSize: 16,
   },
 });
