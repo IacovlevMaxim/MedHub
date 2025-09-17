@@ -1,4 +1,3 @@
-import InputField from "@/components/InputField";
 import { useAuth } from "@/hooks/useAuth";
 import useInputField from "@/hooks/useInputField";
 import { useRouter } from "expo-router";
@@ -11,8 +10,11 @@ import {
   Text,
   TouchableOpacity,
   View,
+  ScrollView,
+  TextInput,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
+import Icon from "react-native-vector-icons/FontAwesome5";
 
 const emailValidation = (value: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,17 +48,18 @@ export default function Reset() {
   const handleSubmit = async () => {
     if (validateForm()) {
       // In a real app, you would authenticate with a server here
-      const res = await auth?.authFetch('/api/Auth/forgot-password', {
-        fetchParams: { 
-          method: 'POST',
-          body: JSON.stringify({ 
-            email: emailField.value
-          }) 
-        } 
+      const res = await auth?.authFetch("/api/Auth/forgot-password", {
+        fetchParams: {
+          method: "POST",
+          body: JSON.stringify({
+            email: emailField.value,
+          }),
+        },
       });
 
-      if(res.status === 200) {
-        router.push('/new-password');
+      if (res.status === 200) {
+        setSentLink(true);
+        router.push("/new-password");
       } else {
         Alert.alert("Error", "There is no account with this email.");
       }
@@ -71,38 +74,61 @@ export default function Reset() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
     >
-      <View style={styles.innerContainer}>
-        <View
-          style={{
-            marginBottom: 40,
-            marginLeft: 10,
-            marginRight: 10,
-            alignContent: "center",
-          }}
-        >
-          <Text style={styles.text}>
-            You will receive the link to reset your password at the email
-            address provided.
-          </Text>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.inner}>
+          <View style={styles.logoBox}>
+            <View style={styles.logoCircle}>
+              <Text style={styles.logoText}>
+                <Icon name="unlock-alt" color="#fff" size={28} />
+              </Text>
+            </View>
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.subtitle}>
+              You will receive a link to reset your password at the email
+              address provided.
+            </Text>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Send reset link</Text>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter your email"
+                  value={emailField.value}
+                  onChangeText={emailField.setValue}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+              </View>
+
+              {sentLink && (
+                <Text style={{ color: "#4BB543", textAlign: "center" }}>
+                  Reset link sent! Please check your email.
+                </Text>
+              )}
+
+              <TouchableOpacity
+                style={styles.signInButton}
+                onPress={handleSubmit}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.signInButtonText}>Send Reset Link</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
-
-        <InputField {...emailField} />
-
-        {sentLink && (
-          <Text style={[styles.text, { color: "#4BB543" }]}>
-            Reset link sent! Please check your email.
-          </Text>
-        )}
-
-        <TouchableOpacity
-          style={sentLink ? styles.buttonDisabled : styles.button}
-          onPress={handleSubmit}
-          activeOpacity={0.8}
-          disabled={sentLink}
-        >
-          <Text style={styles.buttonText}>Send Reset Link</Text>
-        </TouchableOpacity>
-      </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -110,72 +136,92 @@ export default function Reset() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
-  },
-  innerContainer: {
-    flex: 1,
-    padding: 20,
+    backgroundColor: "#F5F6FA",
     justifyContent: "center",
+    alignItems: "center",
+    padding: 16,
   },
-  header: {
+  inner: {
+    width: "100%",
+    maxWidth: 400,
+  },
+  logoBox: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  logoCircle: {
+    width: 64,
+    height: 64,
+    backgroundColor: "#4F8EF7",
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  logoText: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "bold",
+  },
+  title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 40,
+    color: "#222",
+    marginBottom: 4,
     textAlign: "center",
   },
-  inputContainer: {
-    marginBottom: 20,
+  subtitle: {
+    color: "#888",
+    fontSize: 15,
+    textAlign: "center",
   },
-  inputLabel: {
-    color: "#fff",
-    marginBottom: 8,
-    fontSize: 16,
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+    color: "#222",
+  },
+  form: {
+    marginBottom: 16,
+  },
+  inputGroup: {
+    marginBottom: 12,
+  },
+  label: {
+    fontSize: 14,
+    color: "#222",
+    marginBottom: 4,
+    fontWeight: "500",
   },
   input: {
-    backgroundColor: "#333",
+    height: 44,
+    backgroundColor: "#F5F6FA",
     borderRadius: 8,
-    padding: 15,
-    color: "#fff",
-    fontSize: 16,
     borderWidth: 1,
-    borderColor: "#444",
+    borderColor: "#e3e8f0",
+    paddingHorizontal: 12,
+    fontSize: 16,
   },
-  inputError: {
-    borderColor: "#ff4d4d",
+  signInButton: {
+    backgroundColor: "#4F8EF7",
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 8,
   },
-  errorText: {
-    color: "#ff4d4d",
-    marginTop: 5,
-    fontSize: 14,
-  },
-  text: {
+  signInButtonText: {
     color: "#fff",
-    marginBottom: 20,
-    fontSize: 16,
-    textAlign: "center",
-  },
-  link: {
-    color: "#7f58ff",
-    textDecorationLine: "underline",
-  },
-  button: {
-    backgroundColor: Colors.light.text,
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: "gray",
-    borderRadius: 8,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  buttonText: {
-    color: Colors.light.background,
-    fontSize: 16,
     fontWeight: "bold",
+    fontSize: 16,
   },
 });
