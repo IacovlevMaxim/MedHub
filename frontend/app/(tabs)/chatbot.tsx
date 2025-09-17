@@ -9,6 +9,8 @@ import {
   Dimensions,
   Animated,
   PanResponder,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 
@@ -28,6 +30,7 @@ export default function ChatBot() {
     },
   ]);
   const [draft, setDraft] = useState("");
+  const [inputHeight, setInputHeight] = useState(40);
 
   const historyItems = useMemo(
     () => [
@@ -149,86 +152,105 @@ export default function ChatBot() {
         <View style={{ width: 36 }} />
       </View>
 
-      <View style={styles.body} {...edgePan.panHandlers}>
-        {/* Chat area */}
-        <View style={styles.chatArea}>
-          <FlatList
-            contentContainerStyle={{ padding: 12 }}
-            data={messages}
-            keyExtractor={(m) => m.id}
-            renderItem={({ item }) => (
-              <View
-                style={[
-                  styles.message,
-                  item.role === "user" ? styles.userMsg : styles.assistantMsg,
-                ]}
-              >
-                <Text style={styles.messageText}>{item.content}</Text>
-              </View>
-            )}
-          />
-
-          {/* Input bar */}
-          <View style={styles.inputBar}>
-            <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-              <Feather name="paperclip" size={20} color="#4F8EF7" />
-            </TouchableOpacity>
-            <TextInput
-              style={styles.textInput}
-              placeholder="Send a message"
-              placeholderTextColor="#888"
-              value={draft}
-              onChangeText={setDraft}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 110 : 0}
+      >
+        <View style={styles.body} {...edgePan.panHandlers}>
+          {/* Chat area */}
+          <View style={styles.chatArea}>
+            <FlatList
+              contentContainerStyle={{ padding: 12 }}
+              data={messages}
+              keyExtractor={(m) => m.id}
+              renderItem={({ item }) => (
+                <View
+                  style={[
+                    styles.message,
+                    item.role === "user" ? styles.userMsg : styles.assistantMsg,
+                  ]}
+                >
+                  <Text style={styles.messageText}>{item.content}</Text>
+                </View>
+              )}
             />
-            <TouchableOpacity
-              style={styles.sendBtn}
-              onPress={onSend}
-              activeOpacity={0.7}
-            >
-              <Feather name="send" size={18} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        </View>
 
-        {/* Slide-over history panel and backdrop (animated) */}
-        <Animated.View
-          pointerEvents={historyOpen ? "auto" : "none"}
-          style={[styles.backdrop, { opacity: backdropOpacity }]}
-        >
-          <TouchableOpacity
-            style={{ flex: 1 }}
-            activeOpacity={1}
-            onPress={animateClose}
-          />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            styles.sidebarOverlay,
-            { transform: [{ translateX: drawerX }] },
-          ]}
-          {...drawerPan.panHandlers}
-        >
-          <View style={styles.sidebarHeader}>
-            <Text style={styles.sidebarTitle}>History</Text>
-            <TouchableOpacity activeOpacity={0.7}>
-              <Feather name="plus" size={18} color="#4F8EF7" />
-            </TouchableOpacity>
-          </View>
-          <FlatList
-            data={historyItems}
-            keyExtractor={(i) => i.id}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.historyItem} activeOpacity={0.7}>
-                <Feather name="message-circle" size={16} color="#4F8EF7" />
-                <Text style={styles.historyText} numberOfLines={1}>
-                  {item.title}
-                </Text>
+            {/* Input bar */}
+            <View style={styles.inputBar}>
+              <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+                <Feather name="paperclip" size={20} color="#4F8EF7" />
               </TouchableOpacity>
-            )}
-          />
-        </Animated.View>
-      </View>
+              <TextInput
+                style={[
+                  styles.textInput,
+                  { height: Math.min(120, Math.max(40, inputHeight)) },
+                ]}
+                placeholder="Send a message"
+                placeholderTextColor="#888"
+                value={draft}
+                onChangeText={setDraft}
+                multiline
+                blurOnSubmit={false}
+                returnKeyType="default"
+                textAlignVertical="top"
+                onContentSizeChange={(e) =>
+                  setInputHeight(e.nativeEvent.contentSize.height)
+                }
+              />
+              <TouchableOpacity
+                style={styles.sendBtn}
+                onPress={onSend}
+                activeOpacity={0.7}
+              >
+                <Feather name="send" size={18} color="#fff" />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Slide-over history panel and backdrop (animated) */}
+          <Animated.View
+            pointerEvents={historyOpen ? "auto" : "none"}
+            style={[styles.backdrop, { opacity: backdropOpacity }]}
+          >
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              activeOpacity={1}
+              onPress={animateClose}
+            />
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              styles.sidebarOverlay,
+              { transform: [{ translateX: drawerX }] },
+            ]}
+            {...drawerPan.panHandlers}
+          >
+            <View style={styles.sidebarHeader}>
+              <Text style={styles.sidebarTitle}>History</Text>
+              <TouchableOpacity activeOpacity={0.7}>
+                <Feather name="plus" size={18} color="#4F8EF7" />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={historyItems}
+              keyExtractor={(i) => i.id}
+              renderItem={({ item }) => (
+                <TouchableOpacity
+                  style={styles.historyItem}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="message-circle" size={16} color="#4F8EF7" />
+                  <Text style={styles.historyText} numberOfLines={1}>
+                    {item.title}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            />
+          </Animated.View>
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
