@@ -1,5 +1,6 @@
 import InputField from "@/components/InputField";
-import { useAuth } from "@/hooks/useAuth";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { loginAsync, selectAuthStatus, setAuthenticated } from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import { Link } from "expo-router";
 import {
@@ -28,7 +29,8 @@ const passwordValidation = (value: string) => {
 };
 
 export default function Login() {
-  const auth = useAuth();
+  const dispatch = useAppDispatch();
+  const status = useAppSelector(selectAuthStatus);
   const emailField = useInputField({
     label: "Email",
     field: "email",
@@ -58,19 +60,21 @@ export default function Login() {
 
   const handleSubmit = async () => {
     if (validateForm()) {
-      const res = await auth?.authFetch("/api/Auth/login", {
-        fetchParams: {
-          method: "POST",
-          body: JSON.stringify({
+      try {
+        const resultAction = await dispatch(
+          loginAsync({
             identifier: emailField.value,
             password: passwordField.value,
-          }),
-        },
-      });
-      if (res.status === 200) {
-        auth?.signIn();
-      } else {
-        Alert.alert("Error", "Invalid email or password.");
+          })
+        );
+        if (loginAsync.fulfilled.match(resultAction)) {
+          console.log("Login successful");
+          // Login successful, navigation handled elsewhere
+        } else {
+          Alert.alert("Error", "Invalid email or password.");
+        }
+      } catch {
+        Alert.alert("Error", "Login failed.");
       }
     }
   };
@@ -122,8 +126,11 @@ export default function Login() {
               <TouchableOpacity
                 style={styles.signInButton}
                 onPress={handleSubmit}
+                disabled={status === "loading"}
               >
-                <Text style={styles.signInButtonText}>Sign In</Text>
+                <Text style={styles.signInButtonText}>
+                  {status === "loading" ? "Signing In..." : "Sign In"}
+                </Text>
               </TouchableOpacity>
             </View>
 

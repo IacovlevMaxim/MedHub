@@ -1,9 +1,10 @@
-import { AuthProvider } from "@/hooks/useAuth";
 import { usePathname } from "expo-router";
 import { Stack } from "expo-router";
 import React from "react";
 import { Alert, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Provider } from "react-redux";
 import Header from "@/components/HomeHeader";
+import { store } from "./store";
 import { FontAwesome } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import { Platform } from "react-native";
@@ -78,7 +79,7 @@ export default function RootLayout() {
     TabContent = <AppointmentsView />;
 
   return (
-    <AuthProvider>
+    <Provider store={store}>
       <View style={styles.container}>
         {isTabs ? (
           <Header
@@ -92,12 +93,12 @@ export default function RootLayout() {
             <Stack.Screen name="login" />
             <Stack.Screen name="register" />
             <Stack.Screen name="reset" />
-            <Stack.Screen name="new-password" />
+            <Stack.Screen name="reset-password" />
             <Stack.Screen name="activate" />
           </Stack>
         )}
       </View>
-    </AuthProvider>
+    </Provider>
   );
 }
 

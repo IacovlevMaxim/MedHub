@@ -13,6 +13,7 @@ import Appointments from "./appointments";
 import Profile from "./profile";
 import ChatBot from "./chatbot";
 import FAQ from "./faq";
+import { AuthGuard } from "@/hooks/useAuth";
 
 const handleSearchPress = () => {
   Alert.alert("Search", "Search functionality coming soon!");

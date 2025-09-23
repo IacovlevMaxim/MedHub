@@ -1,9 +1,10 @@
-import { useAuth } from "@/hooks/useAuth";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { registerAsync, selectAuthStatus } from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import InputField from "@/components/InputField";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -41,7 +42,9 @@ const passwordValidation = (value: string) => {
 };
 
 export default function Register() {
-  const auth = useAuth();
+  const dispatch = useAppDispatch();
+  const status = useAppSelector(selectAuthStatus);
+  const router = useRouter();
   const [date, setDate] = useState(new Date());
   const nameField = useInputField({
     label: "Name",
@@ -88,7 +91,6 @@ export default function Register() {
 
   const handleSubmit = async () => {
     if (validateForm()) {
-      // In a real app, you would authenticate with a server here
       const body: RegisterBody = fields.reduce(
         (acc, field) => {
           acc[field.field] = field.value;
@@ -100,20 +102,15 @@ export default function Register() {
         } as RegisterBody
       );
 
-      console.log("Register body:", body);
-
-      const res = await auth?.authFetch("/api/Auth/register", {
-        fetchParams: {
-          method: "POST",
-          body: JSON.stringify(body),
-        },
-      });
-
-      console.log("Register response:", res);
-
-      if (res.status === 200) {
-        auth?.signIn();
-      } else {
+      try {
+        const resultAction = await dispatch(registerAsync(body));
+        if (registerAsync.fulfilled.match(resultAction)) {
+          // Registration successful, navigation handled elsewhere
+          router.replace("/login")
+        } else {
+          Alert.alert("Failed to register", "Please try again later.");
+        }
+      } catch {
         Alert.alert("Failed to register", "Please try again later.");
       }
     }
@@ -209,8 +206,11 @@ export default function Register() {
               <TouchableOpacity
                 style={styles.signInButton}
                 onPress={handleSubmit}
+                disabled={status === "loading"}
               >
-                <Text style={styles.signInButtonText}>Create Account</Text>
+                <Text style={styles.signInButtonText}>
+                  {status === "loading" ? "Registering..." : "Create Account"}
+                </Text>
               </TouchableOpacity>
             </View>
 
