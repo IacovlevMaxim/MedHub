@@ -13,6 +13,7 @@ import Appointments from "./appointments";
 import Profile from "./profile";
 import ChatBot from "./chatbot";
 import FAQ from "./faq";
+import { AuthGuard } from "@/hooks/useAuth";
 
 const handleSearchPress = () => {
   Alert.alert("Search", "Search functionality coming soon!");
@@ -36,12 +37,14 @@ export default function TabLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
-      <View style={styles.container}>
-        <View style={styles.content}>{tabComponents[activeTab]}</View>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      </View>
-    </TabsContext.Provider>
+    <AuthGuard>
+      <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+        <View style={styles.container}>
+          <View style={styles.content}>{tabComponents[activeTab]}</View>
+          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        </View>
+      </TabsContext.Provider>
+    </AuthGuard>
   );
 }
 

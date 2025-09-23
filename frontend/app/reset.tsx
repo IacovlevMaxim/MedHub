@@ -1,4 +1,5 @@
-import { useAuth } from "@/hooks/useAuth";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { forgotPasswordAsync, selectAuthStatus } from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import InputField from "@/components/InputField";
 import { useRouter } from "expo-router";
@@ -25,7 +26,8 @@ const emailValidation = (value: string) => {
 export default function Reset() {
   const router = useRouter();
   const [sentLink, setSentLink] = useState(false);
-  const auth = useAuth();
+  const dispatch = useAppDispatch();
+  const status = useAppSelector(selectAuthStatus);
   const emailField = useInputField({
     label: "Email",
     field: "email",
@@ -47,25 +49,19 @@ export default function Reset() {
 
   const handleSubmit = async () => {
     if (validateForm()) {
-      // In a real app, you would authenticate with a server here
-      const res = await auth?.authFetch("/api/Auth/forgot-password", {
-        fetchParams: {
-          method: "POST",
-          body: JSON.stringify({
-            email: emailField.value,
-          }),
-        },
-      });
-
-      if (res.status === 200) {
-        setSentLink(true);
-        router.push("/new-password");
-      } else {
-        Alert.alert("Error", "There is no account with this email.");
+      try {
+        const resultAction = await dispatch(
+          forgotPasswordAsync({ email: emailField.value })
+        );
+        if (forgotPasswordAsync.fulfilled.match(resultAction)) {
+          setSentLink(true);
+          router.push("/reset-password");
+        } else {
+          Alert.alert("Error", "There is no account with this email.");
+        }
+      } catch {
+        Alert.alert("Error", "Failed to send reset link.");
       }
-
-      //   auth?.signIn();
-      // Navigation is handled by the AuthProvider in _layout.tsx
     }
   };
 
@@ -116,8 +112,11 @@ export default function Reset() {
                 style={styles.signInButton}
                 onPress={handleSubmit}
                 activeOpacity={0.8}
+                disabled={status === "loading"}
               >
-                <Text style={styles.signInButtonText}>Send Reset Link</Text>
+                <Text style={styles.signInButtonText}>
+                  {status === "loading" ? "Sending..." : "Send Reset Link"}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
