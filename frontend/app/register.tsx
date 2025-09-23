@@ -1,5 +1,9 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
-import { registerAsync, selectAuthStatus } from "@/features/auth/authSlice";
+import {
+  registerAsync,
+  selectAuthStatus,
+  selectAuthError,
+} from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import InputField from "@/components/InputField";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
@@ -18,6 +22,7 @@ import {
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import ErrorBanner from "@/components/ErrorBanner";
 
 interface RegisterBody {
   [key: string]: string;
@@ -44,6 +49,7 @@ const passwordValidation = (value: string) => {
 export default function Register() {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectAuthStatus);
+  const error = useAppSelector(selectAuthError);
   const router = useRouter();
   const [date, setDate] = useState(new Date());
   const nameField = useInputField({
@@ -106,7 +112,7 @@ export default function Register() {
         const resultAction = await dispatch(registerAsync(body));
         if (registerAsync.fulfilled.match(resultAction)) {
           // Registration successful, navigation handled elsewhere
-          router.replace("/login")
+          router.replace("/login");
         } else {
           Alert.alert("Failed to register", "Please try again later.");
         }
@@ -144,6 +150,7 @@ export default function Register() {
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Sign Up</Text>
+            <ErrorBanner message={error} />
             <View style={styles.form}>
               <InputField
                 label="Full Name"

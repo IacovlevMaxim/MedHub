@@ -1,5 +1,9 @@
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
-import { forgotPasswordAsync, selectAuthStatus } from "@/features/auth/authSlice";
+import {
+  forgotPasswordAsync,
+  selectAuthStatus,
+  selectAuthError,
+} from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import InputField from "@/components/InputField";
 import { useRouter } from "expo-router";
@@ -16,6 +20,7 @@ import {
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
+import ErrorBanner from "@/components/ErrorBanner";
 
 const emailValidation = (value: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -28,6 +33,7 @@ export default function Reset() {
   const [sentLink, setSentLink] = useState(false);
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectAuthStatus);
+  const error = useAppSelector(selectAuthError);
   const emailField = useInputField({
     label: "Email",
     field: "email",
@@ -94,6 +100,7 @@ export default function Reset() {
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Send reset link</Text>
+            <ErrorBanner message={error} />
             <View style={styles.form}>
               <InputField
                 label="Email"

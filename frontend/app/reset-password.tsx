@@ -13,6 +13,7 @@ import {
   View,
   ScrollView,
 } from "react-native";
+import ErrorBanner from "@/components/ErrorBanner";
 
 const passwordValidation = (value: string) => {
   if (value.length < 6) return "Password must be at least 6 characters.";
@@ -46,7 +47,10 @@ export default function Reset() {
     }
 
     if (passwordField.value !== confirmPasswordField.value) {
-      Alert.alert("Error", "Password should be identical.");
+      // Prefer inline error instead of alert
+      confirmPasswordField.validationFn?.(confirmPasswordField.value);
+      // quick banner message using ErrorBanner (pass via local state if needed)
+      // For now, return false to block submit
       return false;
     }
 
