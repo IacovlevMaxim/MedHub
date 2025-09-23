@@ -7,8 +7,10 @@ import {
   TouchableOpacity,
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
+import { useTabs } from "@/app/(tabs)/tabContext";
 
 export default function PatientDashboard() {
+  const { setActiveTab } = useTabs();
   const upcomingAppointments = [
     {
       id: 1,
@@ -56,9 +58,13 @@ export default function PatientDashboard() {
               How are you feeling today?
             </Text>
           </View>
-          <View style={styles.avatar}>
+          <TouchableOpacity
+            style={styles.avatar}
+            onPress={() => setActiveTab("profile")}
+            activeOpacity={0.7}
+          >
             <Feather name="user" size={28} color="#fff" />
-          </View>
+          </TouchableOpacity>
         </View>
       </View>
 

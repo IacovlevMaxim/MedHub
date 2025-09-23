@@ -1,7 +1,6 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
-import { FontAwesome } from "@expo/vector-icons";
 interface BottomNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
@@ -12,7 +11,7 @@ const tabs = [
   { id: "appointments", label: "Appointments", icon: "calendar" },
   { id: "results", label: "Results", icon: "activity" },
   { id: "history", label: "History", icon: "file-text" },
-  { id: "profile", label: "Profile", icon: "user" },
+  { id: "chat", label: "ChatBot", icon: "message-circle" },
 ];
 
 export function BottomNavigation({
@@ -33,7 +32,7 @@ export function BottomNavigation({
           >
             <Feather
               name={icon}
-              size={22}
+              size={20}
               color={activeTab === id ? "#4F8EF7" : "#888"}
             />
             <Text
@@ -69,29 +68,29 @@ const styles = StyleSheet.create({
   },
   navRow: {
     flexDirection: "row",
-    justifyContent: "space-evenly", // or "space-between"
+    justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 8,
-    width: "100%", // <-- ensures full width
-    // alignSelf: "stretch", // <-- not needed
-    // maxWidth: 500, // <-- remove this
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    width: "100%",
   },
   tabButton: {
     flex: 1,
+    minWidth: 0,
     alignItems: "center",
-    paddingVertical: 6,
-    borderRadius: 10,
-    marginHorizontal: 4,
+    paddingVertical: 4,
+    borderRadius: 8,
+    marginHorizontal: 2,
   },
   tabActive: {
-    backgroundColor: "#dbeafe",
+    backgroundColor: "#e8f0fe",
   },
   tabInactive: {
     backgroundColor: "#fff",
   },
   tabLabel: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: 11,
+    marginTop: 1,
     fontWeight: "500",
   },
   tabLabelActive: {
