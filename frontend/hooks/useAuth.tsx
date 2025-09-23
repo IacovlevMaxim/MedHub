@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import { useRouter } from "expo-router";
 import { useAppSelector } from "@/hooks/useRedux";
@@ -11,9 +9,13 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.replace("/login");
-    }
+    const timer = setTimeout(() => {
+      if (isAuthenticated === false) {
+        router.replace("/login");
+      }
+    }, 1000); // 1 second delay
+
+    return () => clearTimeout(timer);
   }, [isAuthenticated]);
 
   return <>{children}</>;
