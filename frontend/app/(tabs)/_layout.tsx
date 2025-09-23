@@ -37,14 +37,12 @@ export default function TabLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
 
   return (
-    <AuthGuard>
-      <TabsContext.Provider value={{ activeTab, setActiveTab }}>
-        <View style={styles.container}>
-          <View style={styles.content}>{tabComponents[activeTab]}</View>
-          <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-        </View>
-      </TabsContext.Provider>
-    </AuthGuard>
+    <TabsContext.Provider value={{ activeTab, setActiveTab }}>
+      <View style={styles.container}>
+        <View style={styles.content}>{tabComponents[activeTab]}</View>
+        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+      </View>
+    </TabsContext.Provider>
   );
 }
 

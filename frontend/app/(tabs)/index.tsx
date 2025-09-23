@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { useTabs } from "@/app/(tabs)/tabContext";
+import { AuthGuard } from "@/hooks/useAuth";
 
 export default function PatientDashboard() {
   const { setActiveTab } = useTabs();
@@ -48,6 +49,7 @@ export default function PatientDashboard() {
   ];
 
   return (
+    <AuthGuard>
     <ScrollView style={styles.container}>
       {/* Welcome Header */}
       <View style={styles.header}>
@@ -177,6 +179,7 @@ export default function PatientDashboard() {
         </View>
       </View>
     </ScrollView>
+    </AuthGuard>
   );
 }
 
