@@ -174,6 +174,7 @@ export const authSlice = createSlice({
       // AsyncStorage.removeItem('refreshToken');
     },
     logOut: (state) => {
+      console.log("Logging out, clearing tokens");
       state.accessToken = null;
       state.accessTokenExpiresAt = null;
       state.refreshToken = null;

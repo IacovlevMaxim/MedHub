@@ -2,7 +2,7 @@ import InputField from "@/components/InputField";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { loginAsync, selectAuthStatus, setAuthenticated } from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   Alert,
   KeyboardAvoidingView,
@@ -16,6 +16,7 @@ import {
 import React from "react";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
+// import { AuthGuard } from "@/hooks/useAuth";
 
 const emailValidation = (value: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +31,7 @@ const passwordValidation = (value: string) => {
 
 export default function Login() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const status = useAppSelector(selectAuthStatus);
   const emailField = useInputField({
     label: "Email",
@@ -70,6 +72,7 @@ export default function Login() {
         if (loginAsync.fulfilled.match(resultAction)) {
           console.log("Login successful");
           // Login successful, navigation handled elsewhere
+          router.replace("/(tabs)");
         } else {
           Alert.alert("Error", "Invalid email or password.");
         }
@@ -83,6 +86,7 @@ export default function Login() {
   const handleForgotPassword = () => {};
 
   return (
+    // <AuthGuard>
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
@@ -162,6 +166,7 @@ export default function Login() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+    // </AuthGuard>
   );
 }
 

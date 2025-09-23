@@ -1,4 +1,4 @@
-import React from "react";
+import React, { use, useEffect } from "react";
 import {
   View,
   Text,
@@ -8,10 +8,26 @@ import {
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { useTabs } from "@/app/(tabs)/tabContext";
-import { AuthGuard } from "@/hooks/useAuth";
+import { useAppSelector } from "@/hooks/useRedux";
+import { selectIsAuthenticated } from "@/features/auth/authSlice";
+import { useRouter } from "expo-router";
+// import { AuthGuard } from "@/hooks/useAuth";
 
 export default function PatientDashboard() {
   const { setActiveTab } = useTabs();
+  const router = useRouter();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (isAuthenticated === false) {
+        router.replace("/login");
+      }
+    }, 1000); // 1 second delay
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated]);
+
   const upcomingAppointments = [
     {
       id: 1,
@@ -49,7 +65,7 @@ export default function PatientDashboard() {
   ];
 
   return (
-    <AuthGuard>
+    // <AuthGuard>
     <ScrollView style={styles.container}>
       {/* Welcome Header */}
       <View style={styles.header}>
@@ -179,7 +195,7 @@ export default function PatientDashboard() {
         </View>
       </View>
     </ScrollView>
-    </AuthGuard>
+    // </AuthGuard>
   );
 }
 

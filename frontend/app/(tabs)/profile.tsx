@@ -9,6 +9,7 @@ import {
 import Feather from "react-native-vector-icons/Feather";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { logOut } from "@/features/auth/authSlice";
+import { router } from "expo-router";
 
 export default function ProfileView() {
   const dispatch = useAppDispatch();
@@ -196,7 +197,10 @@ export default function ProfileView() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { borderColor: "#E53935" }]}
-          onPress={() => dispatch(logOut())}
+          onPress={() => {
+            dispatch(logOut());
+            router.replace("/login");
+          }}
         >
           <Feather
             name="log-out"
