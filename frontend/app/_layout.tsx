@@ -13,6 +13,8 @@ import FAQScreen from "./(tabs)/faq";
 import MedicalHistoryView from "./(tabs)/medical-history";
 import LabResultsView from "./(tabs)/lab-results";
 import AppointmentsView from "./(tabs)/appointments";
+import { Provider } from "react-redux";
+import { store } from "./store";
 
 const handleSearchPress = () => {
   Alert.alert("Search", "Search functionality coming soon!");
@@ -79,24 +81,26 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <View style={styles.container}>
-        {isTabs ? (
-          <Header
-            userName="Mr. Williamson"
-            onSearchPress={handleSearchPress}
-            onNotificationPress={handleNotificationPress}
-          />
-        ) : (
-          <Stack screenOptions={{ headerShown: true }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="register" />
-            <Stack.Screen name="reset" />
-            <Stack.Screen name="new-password" />
-            <Stack.Screen name="activate" />
-          </Stack>
-        )}
-      </View>
+      <Provider store={store}>
+        <View style={styles.container}>
+          {isTabs ? (
+            <Header
+              userName="Mr. Williamson"
+              onSearchPress={handleSearchPress}
+              onNotificationPress={handleNotificationPress}
+            />
+          ) : (
+            <Stack screenOptions={{ headerShown: true }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="register" />
+              <Stack.Screen name="reset" />
+              <Stack.Screen name="new-password" />
+              <Stack.Screen name="activate" />
+            </Stack>
+          )}
+        </View>
+      </Provider>
     </AuthProvider>
   );
 }

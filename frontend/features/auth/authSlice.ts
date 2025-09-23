@@ -1,6 +1,8 @@
 import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {RootState} from '../../app/store';
 
+const backendApi = process.env.EXPO_PUBLIC_API_URL;
+
 interface AuthState {
   accessToken: string | null;
   accessTokenExpiresAt: string | null;
@@ -29,8 +31,9 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   
   // TODO: Get refresh token from AsyncStorage
   // const refreshToken = await AsyncStorage.getItem('refreshToken');
+  console.log("backendApi", backendApi);
   
-  const response = await fetch('/api/Auth/refresh', {
+  const response = await fetch(`${backendApi}/api/Auth/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -61,7 +64,7 @@ export const loginAsync = createAsyncThunk<
   {identifier: string; password: string},
   {state: RootState}
 >('auth/login', async (credentials) => {
-  const response = await fetch('/api/Auth/login', {
+  const response = await fetch(`${backendApi}/api/Auth/login`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

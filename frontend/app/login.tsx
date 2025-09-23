@@ -1,5 +1,4 @@
 import InputField from "@/components/InputField";
-import { useAuth } from "@/hooks/useAuth";
 import useInputField from "@/hooks/useInputField";
 import { Link } from "expo-router";
 import {
@@ -11,6 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { loginAsync, selectAuthStatus, setAuthenticated } from "@/features/auth/authSlice";
 
 import React from "react";
 import { Colors } from "@/constants/Colors";
@@ -26,7 +27,9 @@ const passwordValidation = (value: string) => {
 };
 
 export default function Login() {
-  const auth = useAuth();
+  const dispatch = useAppDispatch();
+  const status = useAppSelector(selectAuthStatus);
+
   const emailField = useInputField({
     label: "Email",
     field: "email",
@@ -55,23 +58,23 @@ export default function Login() {
 
   const handleSubmit = async () => {
     if (validateForm()) {
-      // In a real app, you would authenticate with a server here
-      const res = await auth?.authFetch('/api/Auth/login', {
-        fetchParams: { 
-          method: 'POST',
-          body: JSON.stringify({ 
-            identifier: emailField.value, password: passwordField.value 
-          }) 
-        } 
-      });//.then(r => r.json());
-
-      if(res.status === 200) {
-        auth?.signIn();
-        // Navigation is handled by the AuthProvider in _layout.tsx
-      } else {
-        Alert.alert("Error", "Invalid email or password.");
+      try {
+        const resultAction = await dispatch(
+          loginAsync({
+            identifier: emailField.value,
+            password: passwordField.value,
+          })
+        );
+        if (loginAsync.fulfilled.match(resultAction)) {
+          // Login successful, navigation handled elsewhere
+          dispatch(setAuthenticated(true));
+        } else {
+          Alert.alert("Error", "Invalid email or password.");
+        }
+      } catch {
+        Alert.alert("Error", "Login failed.");
       }
-    };
+    }
   }
 
   return (
