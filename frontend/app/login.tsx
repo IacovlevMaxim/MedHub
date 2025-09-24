@@ -1,6 +1,6 @@
 import InputField from "@/components/InputField";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
-import { loginAsync, selectAuthStatus, setAuthenticated } from "@/features/auth/authSlice";
+import { loginAsync, selectAuthStatus, setAuthenticated, initializeAuthAsync } from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import { Link, useRouter } from "expo-router";
 import {
@@ -46,6 +46,22 @@ export default function Login() {
     secureTextEntry: true,
     validationFn: passwordValidation,
   });
+
+  React.useEffect(() => {
+    const checkStoredTokens = async () => {
+      try {
+        const resultAction = await dispatch(initializeAuthAsync());
+        if (initializeAuthAsync.fulfilled.match(resultAction)) {
+          console.log("Tokens found, user is logged in");
+          router.replace("/(tabs)");
+        }
+      } catch (error) {
+        console.log("No tokens found, user needs to log in");
+      }
+    };
+
+    checkStoredTokens();
+  }, [dispatch, router]);
 
   const validateForm = () => {
     console.log("Validating form...");
