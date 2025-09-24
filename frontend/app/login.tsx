@@ -1,26 +1,24 @@
 import InputField from "@/components/InputField";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
-import { loginAsync, selectAuthStatus, setAuthenticated } from "@/features/auth/authSlice";
+import { loginAsync, selectAuthStatus } from "@/features/auth/authSlice";
 import useInputField from "@/hooks/useInputField";
 import { Link, useRouter } from "expo-router";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import React from "react";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
 // import { AuthGuard } from "@/hooks/useAuth";
 
-const emailValidation = (value: string) => {
+// Accept either a valid email OR a username (non-empty, min 3 chars)
+const identifierValidation = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "This field is required.";
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(value)) return "Enter a valid email address.";
+  if (trimmed.includes("@")) {
+    return emailRegex.test(trimmed) ? undefined : "Enter a valid email address.";
+  }
+  // Username path: basic length check
+  if (trimmed.length < 3) return "Username must be at least 3 characters.";
   return undefined;
 };
 
@@ -34,10 +32,10 @@ export default function Login() {
   const router = useRouter();
   const status = useAppSelector(selectAuthStatus);
   const emailField = useInputField({
-    label: "Email",
+    label: "Email or Username",
     field: "email",
     value: "",
-    validationFn: emailValidation,
+    validationFn: identifierValidation,
   });
   const passwordField = useInputField({
     label: "Password",
@@ -74,10 +72,10 @@ export default function Login() {
           // Login successful, navigation handled elsewhere
           router.replace("/(tabs)");
         } else {
-          Alert.alert("Error", "Invalid email or password.");
+          // Rejected: global AlertComponent will show message from slice
         }
       } catch {
-        Alert.alert("Error", "Login failed.");
+        // Global AlertComponent will handle any error from slice
       }
     }
   };

@@ -8,16 +8,7 @@ import useInputField from "@/hooks/useInputField";
 import InputField from "@/components/InputField";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ScrollView,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import ErrorBanner from "@/components/ErrorBanner";
@@ -63,10 +54,10 @@ export default function Reset() {
           setSentLink(true);
           router.push("/reset-password");
         } else {
-          Alert.alert("Error", "There is no account with this email.");
+          // Rejected: global AlertComponent will show message from slice
         }
       } catch {
-        Alert.alert("Error", "Failed to send reset link.");
+        // Global AlertComponent will handle any error from slice
       }
     }
   };

@@ -14,6 +14,7 @@ import FAQScreen from "./(tabs)/faq";
 import MedicalHistoryView from "./(tabs)/medical-history";
 import LabResultsView from "./(tabs)/lab-results";
 import AppointmentsView from "./(tabs)/appointments";
+import AlertComponent from "@/components/AlertComponent";
 
 const handleSearchPress = () => {
   Alert.alert("Search", "Search functionality coming soon!");
@@ -81,6 +82,8 @@ export default function RootLayout() {
   return (
     <Provider store={store}>
       <View style={styles.container}>
+        {/* Global alert listener */}
+        <AlertComponent />
         {isTabs ? (
           <Header
             userName="Mr. Williamson"

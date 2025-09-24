@@ -168,6 +168,9 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    clearAuthError: (state) => {
+      state.error = null;
+    },
     setAccessToken: (state, action: PayloadAction<{token: string; expiresAt: string}>) => {
       state.accessToken = action.payload.token;
       state.accessTokenExpiresAt = action.payload.expiresAt;
@@ -216,7 +219,7 @@ export const authSlice = createSlice({
     builder
       .addCase(forgotPasswordAsync.pending, (state) => {
         state.status = 'loading';
-        state.error = null;
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(forgotPasswordAsync.fulfilled, (state) => {
         state.status = 'idle';
@@ -228,7 +231,7 @@ export const authSlice = createSlice({
       })
       .addCase(registerAsync.pending, (state) => {
         state.status = 'loading';
-        state.error = null;
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(registerAsync.fulfilled, (state, action) => {
         state.status = 'idle';
@@ -246,7 +249,7 @@ export const authSlice = createSlice({
       })
       .addCase(refreshAccessTokenAsync.pending, (state) => {
         state.status = 'loading';
-        state.error = null;
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(refreshAccessTokenAsync.fulfilled, (state, action) => {
         state.status = 'idle';
@@ -264,7 +267,7 @@ export const authSlice = createSlice({
       })
       .addCase(loginAsync.pending, (state) => {
         state.status = 'loading';
-        state.error = null;
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.status = 'idle';
@@ -284,6 +287,7 @@ export const authSlice = createSlice({
 });
 
 export const {
+  clearAuthError,
   setAccessToken,
   setRefreshToken,
   setTokens,
