@@ -11,6 +11,7 @@ interface AuthState {
   refreshTokenExpiresAt: string | null;
   isAuthenticated: boolean;
   status: 'idle' | 'loading' | 'failed';
+  error: string | null;
 }
 
 const initialState: AuthState = {
@@ -20,16 +21,17 @@ const initialState: AuthState = {
   refreshTokenExpiresAt: null,
   isAuthenticated: false,
   status: 'idle',
+  error: null,
 };
 
 // Async thunk for forgot password
 export const forgotPasswordAsync = createAsyncThunk<
   {message: string},
   {email: string},
-  {state: RootState}
+  {state: RootState; rejectValue: string}
 >(
   'auth/forgotPassword',
-  async (payload) => {
+  async (payload, thunkAPI) => {
     const response = await fetch(`${backendApi}/api/Auth/forgot-password`, {
       method: 'POST',
       headers: {
@@ -39,7 +41,13 @@ export const forgotPasswordAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      throw new Error('Failed to send reset link');
+      try {
+        const data = await response.json();
+        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to send reset link');
+      } catch {
+        const text = await response.text();
+        return thunkAPI.rejectWithValue(text || 'Failed to send reset link');
+      }
     }
 
     const data = await response.json();
@@ -51,10 +59,10 @@ export const forgotPasswordAsync = createAsyncThunk<
 export const registerAsync = createAsyncThunk<
   {accessToken: string; accessTokenExpiresAt: string; refreshToken: string; refreshTokenExpiresAt: string},
   any,
-  {state: RootState}
+  {state: RootState; rejectValue: string}
 >(
   'auth/register',
-  async (registerData) => {
+  async (registerData, thunkAPI) => {
     const response = await fetch(`${backendApi}/api/Auth/register`, {
       method: 'POST',
       headers: {
@@ -64,7 +72,13 @@ export const registerAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      throw new Error('Registration failed');
+      try {
+        const data = await response.json();
+        return thunkAPI.rejectWithValue(data.message || data.error || 'Registration failed');
+      } catch {
+        const text = await response.text();
+        return thunkAPI.rejectWithValue(text || 'Registration failed');
+      }
     }
 
     const data = await response.json();
@@ -78,8 +92,9 @@ export const registerAsync = createAsyncThunk<
 export const refreshAccessTokenAsync = createAsyncThunk<
   {accessToken: string; accessTokenExpiresAt: string},
   void,
-  {state: RootState}
->('auth/refreshAccessToken', async (_, {getState}) => {
+  {state: RootState; rejectValue: string}
+>('auth/refreshAccessToken', async (_, {getState, rejectWithValue}) => {
+  const {auth} = getState();
   const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
   const response = await fetch(`${backendApi}/api/Auth/refresh`, {
@@ -93,7 +108,13 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   });
 
   if (!response.ok) {
-    throw new Error('Failed to refresh token');
+    try {
+      const data = await response.json();
+      return rejectWithValue(data.message || data.error || 'Failed to refresh token');
+    } catch {
+      const text = await response.text();
+      return rejectWithValue(text || 'Failed to refresh token');
+    }
   }
 
   const data = await response.json();
@@ -108,8 +129,8 @@ export const refreshAccessTokenAsync = createAsyncThunk<
 export const loginAsync = createAsyncThunk<
   {accessToken: string; accessTokenExpiresAt: string; refreshToken: string; refreshTokenExpiresAt: string},
   {identifier: string; password: string},
-  {state: RootState}
->('auth/login', async (credentials) => {
+  {state: RootState; rejectValue: string}
+>('auth/login', async (credentials, thunkAPI) => {
   const response = await fetch(`${backendApi}/api/Auth/login`, {
     method: 'POST',
     headers: {
@@ -119,7 +140,13 @@ export const loginAsync = createAsyncThunk<
   });
 
   if (!response.ok) {
-    throw new Error('Login failed');
+    try {
+      const data = await response.json();
+      return thunkAPI.rejectWithValue(data.message || data.error || 'Login failed');
+    } catch {
+      const text = await response.text();
+      return thunkAPI.rejectWithValue(text || 'Login failed');
+    }
   }
 
   const data = await response.json();
@@ -151,6 +178,9 @@ export const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
+    clearAuthError: (state) => {
+      state.error = null;
+    },
     setAccessToken: (state, action: PayloadAction<{token: string; expiresAt: string}>) => {
       state.accessToken = action.payload.token;
       state.accessTokenExpiresAt = action.payload.expiresAt;
@@ -188,6 +218,7 @@ export const authSlice = createSlice({
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.isAuthenticated = false;
+      state.error = null;
     },
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
@@ -197,15 +228,19 @@ export const authSlice = createSlice({
     builder
       .addCase(forgotPasswordAsync.pending, (state) => {
         state.status = 'loading';
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(forgotPasswordAsync.fulfilled, (state) => {
         state.status = 'idle';
+        state.error = null;
       })
-      .addCase(forgotPasswordAsync.rejected, (state) => {
+      .addCase(forgotPasswordAsync.rejected, (state, action) => {
         state.status = 'failed';
+        state.error = (action.payload as string) || action.error.message || 'Failed to send reset link';
       })
       .addCase(registerAsync.pending, (state) => {
         state.status = 'loading';
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(registerAsync.fulfilled, (state, action) => {
         state.status = 'idle';
@@ -214,28 +249,34 @@ export const authSlice = createSlice({
         state.refreshToken = action.payload.refreshToken;
         state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
         state.isAuthenticated = true;
+        state.error = null;
       })
-      .addCase(registerAsync.rejected, (state) => {
+      .addCase(registerAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.isAuthenticated = false;
+        state.error = (action.payload as string) || action.error.message || 'Registration failed';
       })
       .addCase(refreshAccessTokenAsync.pending, (state) => {
         state.status = 'loading';
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(refreshAccessTokenAsync.fulfilled, (state, action) => {
         state.status = 'idle';
         state.accessToken = action.payload.accessToken;
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
         state.isAuthenticated = true;
+        state.error = null;
       })
-      .addCase(refreshAccessTokenAsync.rejected, (state) => {
+      .addCase(refreshAccessTokenAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.accessToken = null;
         state.accessTokenExpiresAt = null;
         state.isAuthenticated = false;
+        state.error = (action.payload as string) || action.error.message || 'Failed to refresh token';
       })
       .addCase(loginAsync.pending, (state) => {
         state.status = 'loading';
+        // Keep existing error until shown by AlertComponent
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.status = 'idle';
@@ -244,10 +285,12 @@ export const authSlice = createSlice({
         state.refreshToken = action.payload.refreshToken;
         state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
         state.isAuthenticated = true;
+        state.error = null;
       })
-      .addCase(loginAsync.rejected, (state) => {
+      .addCase(loginAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.isAuthenticated = false;
+        state.error = (action.payload as string) || action.error.message || 'Login failed';
       })
       .addCase(initializeAuthAsync.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken;
@@ -261,6 +304,7 @@ export const authSlice = createSlice({
 });
 
 export const {
+  clearAuthError,
   setAccessToken,
   setRefreshToken,
   setTokens,
@@ -276,5 +320,6 @@ export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenti
 export const selectAccessTokenExpiresAt = (state: RootState) => state.auth.accessTokenExpiresAt;
 export const selectRefreshTokenExpiresAt = (state: RootState) => state.auth.refreshTokenExpiresAt;
 export const selectAuthStatus = (state: RootState) => state.auth.status;
+export const selectAuthError = (state: RootState) => state.auth.error;
 
 export default authSlice.reducer;
