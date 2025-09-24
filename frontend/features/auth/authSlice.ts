@@ -1,5 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {RootState} from '../../app/store';
+import * as SecureStore from 'expo-secure-store';
 
 const backendApi = process.env.EXPO_PUBLIC_API_URL;
 
@@ -81,9 +82,8 @@ export const registerAsync = createAsyncThunk<
     }
 
     const data = await response.json();
-    // TODO: Save tokens to AsyncStorage
-    // await AsyncStorage.setItem('refreshToken', data.refreshToken);
-    // await AsyncStorage.setItem('accessToken', data.accessToken);
+    await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+    await SecureStore.setItemAsync('accessToken', data.accessToken);
     return data;
   }
 );
@@ -95,18 +95,15 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   {state: RootState; rejectValue: string}
 >('auth/refreshAccessToken', async (_, {getState, rejectWithValue}) => {
   const {auth} = getState();
-  
-  // TODO: Get refresh token from AsyncStorage
-  // const refreshToken = await AsyncStorage.getItem('refreshToken');
-  console.log("backendApi", backendApi);
-  
+  const refreshToken = await SecureStore.getItemAsync('refreshToken');
+
   const response = await fetch(`${backendApi}/api/Auth/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      refreshToken: auth.refreshToken, // In real implementation, get from AsyncStorage
+      refreshToken,
     }),
   });
 
@@ -121,10 +118,7 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   }
 
   const data = await response.json();
-  
-  // TODO: Save new access token to AsyncStorage if needed
-  // await AsyncStorage.setItem('accessToken', data.accessToken);
-  
+  await SecureStore.setItemAsync('accessToken', data.accessToken);
   return {
     accessToken: data.accessToken,
     accessTokenExpiresAt: data.accessTokenExpiresAt,
@@ -158,10 +152,26 @@ export const loginAsync = createAsyncThunk<
   const data = await response.json();
   
   // TODO: Save tokens to AsyncStorage
-  // await AsyncStorage.setItem('refreshToken', data.refreshToken);
-  // await AsyncStorage.setItem('accessToken', data.accessToken);
+  await SecureStore.setItemAsync('refreshToken', data.refreshToken);
+  await SecureStore.setItemAsync('accessToken', data.accessToken);
   
   return data;
+});
+
+// Add a thunk to read tokens from SecureStore
+export const initializeAuthAsync = createAsyncThunk<
+  {accessToken: string; refreshToken: string},
+  void,
+  {state: RootState}
+>('auth/initializeAuth', async () => {
+  const accessToken = await SecureStore.getItemAsync('accessToken');
+  const refreshToken = await SecureStore.getItemAsync('refreshToken');
+
+  if (!accessToken || !refreshToken) {
+    throw new Error('No tokens found');
+  }
+
+  return { accessToken, refreshToken };
 });
 
 export const authSlice = createSlice({
@@ -198,9 +208,8 @@ export const authSlice = createSlice({
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.isAuthenticated = false;
-      // TODO: Clear tokens from AsyncStorage
-      // AsyncStorage.removeItem('accessToken');
-      // AsyncStorage.removeItem('refreshToken');
+      SecureStore.deleteItemAsync('accessToken');
+      SecureStore.deleteItemAsync('refreshToken');
     },
     logOut: (state) => {
       console.log("Logging out, clearing tokens");
@@ -282,6 +291,14 @@ export const authSlice = createSlice({
         state.status = 'failed';
         state.isAuthenticated = false;
         state.error = (action.payload as string) || action.error.message || 'Login failed';
+      })
+      .addCase(initializeAuthAsync.fulfilled, (state, action) => {
+        state.accessToken = action.payload.accessToken;
+        state.refreshToken = action.payload.refreshToken;
+        state.isAuthenticated = true;
+      })
+      .addCase(initializeAuthAsync.rejected, (state) => {
+        state.isAuthenticated = false;
       });
   },
 });
