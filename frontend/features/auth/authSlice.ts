@@ -12,6 +12,7 @@ interface AuthState {
   isAuthenticated: boolean;
   status: 'idle' | 'loading' | 'failed';
   error: string | null;
+  unauthorizedError: boolean; // New field to monitor 401 errors
 }
 
 const initialState: AuthState = {
@@ -22,16 +23,19 @@ const initialState: AuthState = {
   isAuthenticated: false,
   status: 'idle',
   error: null,
+  unauthorizedError: false, // Initialize the new field
 };
 
 // Async thunk for forgot password
 export const forgotPasswordAsync = createAsyncThunk<
   {message: string},
   {email: string},
-  {state: RootState; rejectValue: string}
+  {state: RootState}
 >(
   'auth/forgotPassword',
-  async (payload, thunkAPI) => {
+  async (payload, {getState, rejectWithValue}) => {
+    const state = getState();
+
     const response = await fetch(`${backendApi}/api/Auth/forgot-password`, {
       method: 'POST',
       headers: {
@@ -41,13 +45,7 @@ export const forgotPasswordAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      try {
-        const data = await response.json();
-        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to send reset link');
-      } catch {
-        const text = await response.text();
-        return thunkAPI.rejectWithValue(text || 'Failed to send reset link');
-      }
+      throw new Error('Failed to send reset link');
     }
 
     const data = await response.json();
@@ -92,29 +90,28 @@ export const registerAsync = createAsyncThunk<
 export const refreshAccessTokenAsync = createAsyncThunk<
   {accessToken: string; accessTokenExpiresAt: string},
   void,
-  {state: RootState; rejectValue: string}
+  {state: RootState}
 >('auth/refreshAccessToken', async (_, {getState, rejectWithValue}) => {
-  const {auth} = getState();
+  const state = getState();
   const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
   const response = await fetch(`${backendApi}/api/Auth/refresh`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      Authorization: `Bearer ${state.auth.accessToken}`,
     },
     body: JSON.stringify({
       refreshToken,
     }),
   });
 
+  if (response.status === 401) {
+    return rejectWithValue('Unauthorized');
+  }
+
   if (!response.ok) {
-    try {
-      const data = await response.json();
-      return rejectWithValue(data.message || data.error || 'Failed to refresh token');
-    } catch {
-      const text = await response.text();
-      return rejectWithValue(text || 'Failed to refresh token');
-    }
+    throw new Error('Failed to refresh token');
   }
 
   const data = await response.json();
@@ -228,15 +225,16 @@ export const authSlice = createSlice({
     builder
       .addCase(forgotPasswordAsync.pending, (state) => {
         state.status = 'loading';
-        // Keep existing error until shown by AlertComponent
+        state.unauthorizedError = false; // Reset the error on new request
       })
       .addCase(forgotPasswordAsync.fulfilled, (state) => {
         state.status = 'idle';
-        state.error = null;
       })
       .addCase(forgotPasswordAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as string) || action.error.message || 'Failed to send reset link';
+        if (action.payload === 'Unauthorized') {
+          state.unauthorizedError = true;
+        }
       })
       .addCase(registerAsync.pending, (state) => {
         state.status = 'loading';
@@ -258,21 +256,19 @@ export const authSlice = createSlice({
       })
       .addCase(refreshAccessTokenAsync.pending, (state) => {
         state.status = 'loading';
-        // Keep existing error until shown by AlertComponent
+        state.unauthorizedError = false; // Reset the error on new request
       })
       .addCase(refreshAccessTokenAsync.fulfilled, (state, action) => {
         state.status = 'idle';
         state.accessToken = action.payload.accessToken;
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
         state.isAuthenticated = true;
-        state.error = null;
       })
       .addCase(refreshAccessTokenAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.accessToken = null;
-        state.accessTokenExpiresAt = null;
-        state.isAuthenticated = false;
-        state.error = (action.payload as string) || action.error.message || 'Failed to refresh token';
+        if (action.payload === 'Unauthorized') {
+          state.unauthorizedError = true;
+        }
       })
       .addCase(loginAsync.pending, (state) => {
         state.status = 'loading';

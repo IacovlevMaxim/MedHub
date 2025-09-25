@@ -12,24 +12,38 @@ import {
   AppointmentStatus,
   Appointment
 } from "@/features/appointments/appointmentSlice";
+import { refreshAccessTokenAsync } from '@/features/auth/authSlice';
+import { useRouter } from 'expo-router';
+
 // import { AuthGuard } from "@/hooks/useAuth";
 
 export default function AppointmentsView() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
   const appointments = useAppSelector(selectAllAppointments);
   const status = useAppSelector(selectAppointmentsStatus);
   const error = useAppSelector(selectAppointmentsError);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   
   useEffect(() => {
-    // For now, just fetch all appointments since we don't have the user ID selector
-    dispatch(fetchAppointments());
-    
-    // When user ID is available:
-    // if (currentUserId) {
-    //   dispatch(fetchUserAppointments(currentUserId));
-    // }
-  }, [dispatch]);
+    const fetchAppointmentsWithRetry = async () => {
+      const result = await dispatch(fetchAppointments());
+
+      console.log('Fetch appointments result:', result);
+
+      if (fetchAppointments.rejected.match(result) && result.error.message?.includes('401')) {
+        const refreshResult = await dispatch(refreshAccessTokenAsync());
+
+        if (refreshAccessTokenAsync.rejected.match(refreshResult)) {
+          router.replace('/login');
+        } else {
+          dispatch(fetchAppointments());
+        }
+      }
+    };
+
+    fetchAppointmentsWithRetry();
+  }, [dispatch, router]);
 
   // Function to format date and time from appointment data
   const formatDateTime = (dateTimeString: string) => {
