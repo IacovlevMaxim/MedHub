@@ -186,7 +186,7 @@ export default function BookAppointment() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Reason for Visit</Text>
           <InputField
-            label=""
+            label="Reason for Visit"
             value={reasonField.value}
             setValue={reasonField.setValue}
             error={reasonField.error}
@@ -197,7 +197,7 @@ export default function BookAppointment() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Additional Notes (Optional)</Text>
           <InputField
-            label=""
+            label="Additional Notes"
             value={notesField.value}
             setValue={notesField.setValue}
             error={notesField.error}
