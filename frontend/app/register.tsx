@@ -9,7 +9,16 @@ import InputField from "@/components/InputField";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
 import React, { useState } from "react";
 import { Link, useRouter } from "expo-router";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View, TextInput } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  TextInput,
+} from "react-native";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import ErrorBanner from "@/components/ErrorBanner";

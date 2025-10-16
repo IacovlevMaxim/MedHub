@@ -1,6 +1,6 @@
 import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {RootState} from '../../app/store';
-import * as SecureStore from 'expo-secure-store';
+// import * as SecureStore from 'expo-secure-store';
 
 const backendApi = process.env.EXPO_PUBLIC_API_URL;
 
