@@ -224,7 +224,7 @@ export default function Register() {
               <Link href="/login" asChild>
                 <TouchableOpacity style={styles.ghostButton}>
                   <Text style={styles.ghostButtonText}>
-                    Already have an account? Sign In
+                    Already have an account? Login
                   </Text>
                 </TouchableOpacity>
               </Link>

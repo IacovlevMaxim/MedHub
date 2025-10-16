@@ -137,7 +137,7 @@ export default function Login() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Sign In</Text>
+            <Text style={styles.cardTitle}>Login</Text>
             <View style={styles.form}>
               <InputField
                 label="Email or Username"
@@ -158,7 +158,7 @@ export default function Login() {
                 disabled={status === "loading"}
               >
                 <Text style={styles.signInButtonText}>
-                  {status === "loading" ? "Signing In..." : "Sign In"}
+                  {status === "loading" ? "Logging In..." : "Log In"}
                 </Text>
               </TouchableOpacity>
             </View>
