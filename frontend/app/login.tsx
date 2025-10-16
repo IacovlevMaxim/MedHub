@@ -14,9 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import React from "react";
-import { Colors } from "@/constants/Colors";
-import Icon from "react-native-vector-icons/FontAwesome5";
-// import { AuthGuard } from "@/hooks/useAuth";
+import Svg, { Path } from 'react-native-svg';
 
 const emailValidation = (value: string) => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -102,7 +100,6 @@ export default function Login() {
   const handleForgotPassword = () => {};
 
   return (
-    // <AuthGuard>
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.container}
@@ -117,9 +114,12 @@ export default function Login() {
         <View style={styles.inner}>
           <View style={styles.logoBox}>
             <View style={styles.logoCircle}>
-              <Text style={styles.logoText}>
-                <Icon name="briefcase-medical" color="red" size={40} />
-              </Text>
+              <Svg width="40" height="40" viewBox="0 0 131 181" fill="none">
+                <Path 
+                  d="M125.1 56.7H104.5C78.1001 56.7 56.6001 78.1 56.6001 104.6C56.6001 108.4 52.8001 111 49.3001 109.7C43.0001 107.3 37.1001 103.6 32.2001 98.6C23.3001 89.6 18.5001 77.6 18.7001 65C19.1001 40.1 39.6001 19.4 64.5001 18.8C76.1001 18.5 87.1001 22.4 95.8001 29.8C97.9001 31.6 101.1 31.6 103.1 29.6L108.3 24.6C110.6 22.4 110.5 18.6 108 16.5C95.9001 6.1 80.2001 0.399995 64.1001 0.799995C47.3001 1.2 31.5001 8 19.6001 20C7.70008 32.1 1.00009 47.9 0.700086 64.7C0.400086 82.2 7.10009 98.7 19.4001 111.2C29.6001 121.5 42.6001 128 56.6001 130V130.6V175.1C56.6001 178.1 59.0001 180.5 62.0001 180.5H69.1001C72.1001 180.5 74.5001 178.1 74.5001 175.1V134.5C74.5001 131.9 76.3001 129.7 78.8001 129.2C108.2 123.1 130.4 96.9 130.4 65.7V62.1C130.5 59.1 128.1 56.7 125.1 56.7Z" 
+                  fill="#FFFFFF"
+                />
+              </Svg>
             </View>
             <Text style={styles.title}>MedHub</Text>
             <Text style={styles.subtitle}>
@@ -182,7 +182,6 @@ export default function Login() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-    // </AuthGuard>
   );
 }
 
