@@ -1,7 +1,10 @@
-import React, { useState } from "react";
-import Header from "@/components/HomeHeader";
-import { Alert, View, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import { Alert, View, StyleSheet, Text } from "react-native";
 import { useRouter } from "expo-router";
+import { useAppDispatch } from "@/hooks/useRedux";
+
+import { useAppSelector } from "@/hooks/useRedux";
+import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated } from "@/features/auth/authSlice";
 import { BottomNavigation } from "../navigation-bar";
 import { TabsContext } from "./tabContext";
 
@@ -34,7 +37,37 @@ const tabComponents: Record<string, React.ReactNode> = {
 };
 
 export default function TabLayout() {
+  const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const router = useRouter();
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    const checkStoredTokens = async () => {
+      try {
+        const resultAction = await dispatch(initializeAuthAsync());
+        if (initializeAuthAsync.fulfilled.match(resultAction)) return;
+
+        const resultRefresh = await dispatch(refreshAccessTokenAsync());
+        if (refreshAccessTokenAsync.fulfilled.match(resultRefresh)) return;
+
+        router.replace("/login");
+      } catch (error) {
+        console.log("No tokens found, user needs to log in");
+        router.replace("/login");
+      }
+    };
+
+    checkStoredTokens();
+  }, [dispatch, router, activeTab]);
+
+  if(!isAuthenticated) {
+      return (
+        <View style={styles.container}>
+          <Text style={{textAlign: 'center', marginTop: 50}}>Trying to login...</Text>
+        </View>
+      );
+  }
 
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>
