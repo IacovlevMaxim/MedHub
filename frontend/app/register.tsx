@@ -18,6 +18,7 @@ import {
   TouchableOpacity,
   View,
   TextInput,
+  Alert,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
@@ -111,6 +112,7 @@ export default function Register() {
         const resultAction = await dispatch(registerAsync(body));
         if (registerAsync.fulfilled.match(resultAction)) {
           // Registration successful, navigation handled elsewhere
+          Alert.alert("Confirm your Account", "Check your email for confirmation link.");
           router.replace("/login");
         } else {
           // Rejected: global AlertComponent will show message from slice

@@ -82,8 +82,6 @@ export const registerAsync = createAsyncThunk<
     }
 
     const data = await response.json();
-    await SecureStore.setItemAsync('refreshToken', data.refreshToken);
-    await SecureStore.setItemAsync('accessToken', data.accessToken);
     return data;
   }
 );
