@@ -94,7 +94,6 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   void,
   {state: RootState; rejectValue: string}
 >('auth/refreshAccessToken', async (_, {getState, rejectWithValue}) => {
-  const {auth} = getState();
   const refreshToken = await SecureStore.getItemAsync('refreshToken');
 
   const response = await fetch(`${backendApi}/api/Auth/refresh`, {

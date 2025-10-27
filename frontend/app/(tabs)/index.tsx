@@ -1,4 +1,4 @@
-import React, { use, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
@@ -8,25 +8,9 @@ import {
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { useTabs } from "@/app/(tabs)/tabContext";
-import { useAppSelector } from "@/hooks/useRedux";
-import { selectIsAuthenticated } from "@/features/auth/authSlice";
-import { useRouter } from "expo-router";
-// import { AuthGuard } from "@/hooks/useAuth";
 
 export default function PatientDashboard() {
   const { setActiveTab } = useTabs();
-  const router = useRouter();
-  const isAuthenticated = useAppSelector(selectIsAuthenticated);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (isAuthenticated === false) {
-        router.replace("/login");
-      }
-    }, 1000); // 1 second delay
-
-    return () => clearTimeout(timer);
-  }, [isAuthenticated]);
 
   const upcomingAppointments = [
     {
