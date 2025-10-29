@@ -1,8 +1,33 @@
 import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {RootState} from '../../app/store';
 import * as SecureStore from 'expo-secure-store';
+import {Platform} from 'react-native';
 
 const backendApi = process.env.EXPO_PUBLIC_API_URL;
+
+// Storage abstraction layer
+const storage = {
+  async getItem(key: string): Promise<string | null> {
+    if (Platform.OS === 'web') {
+      return localStorage.getItem(key);
+    }
+    return await SecureStore.getItemAsync(key);
+  },
+  async setItem(key: string, value: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.setItem(key, value);
+    } else {
+      await SecureStore.setItemAsync(key, value);
+    }
+  },
+  async deleteItem(key: string): Promise<void> {
+    if (Platform.OS === 'web') {
+      localStorage.removeItem(key);
+    } else {
+      await SecureStore.deleteItemAsync(key);
+    }
+  },
+};
 
 interface AuthState {
   accessToken: string | null;
@@ -55,6 +80,37 @@ export const forgotPasswordAsync = createAsyncThunk<
   }
 );
 
+// Async thunk for email confirmation
+export const confirmEmailAsync = createAsyncThunk<
+  {message: string},
+  {email: string; token: string},
+  {state: RootState; rejectValue: string}
+>(
+  'auth/confirmEmail',
+  async (payload, thunkAPI) => {
+    const response = await fetch(`${backendApi}/api/Auth/confirm-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      try {
+        const data = await response.json();
+        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to confirm email');
+      } catch {
+        const text = await response.text();
+        return thunkAPI.rejectWithValue(text || 'Failed to confirm email');
+      }
+    }
+
+    const data = await response.json();
+    return data;
+  }
+);
+
 // Async thunk for registration
 export const registerAsync = createAsyncThunk<
   {accessToken: string; accessTokenExpiresAt: string; refreshToken: string; refreshTokenExpiresAt: string},
@@ -92,7 +148,7 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   void,
   {state: RootState; rejectValue: string}
 >('auth/refreshAccessToken', async (_, {getState, rejectWithValue}) => {
-  const refreshToken = await SecureStore.getItemAsync('refreshToken');
+  const refreshToken = await storage.getItem('refreshToken');
 
   const response = await fetch(`${backendApi}/api/Auth/refresh`, {
     method: 'POST',
@@ -115,7 +171,7 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   }
 
   const data = await response.json();
-  await SecureStore.setItemAsync('accessToken', data.accessToken);
+  await storage.setItem('accessToken', data.accessToken);
   return {
     accessToken: data.accessToken,
     accessTokenExpiresAt: data.accessTokenExpiresAt,
@@ -148,9 +204,9 @@ export const loginAsync = createAsyncThunk<
 
   const data = await response.json();
   
-  // TODO: Save tokens to AsyncStorage
-  await SecureStore.setItemAsync('refreshToken', data.refreshToken);
-  await SecureStore.setItemAsync('accessToken', data.accessToken);
+  // Save tokens to storage
+  await storage.setItem('refreshToken', data.refreshToken);
+  await storage.setItem('accessToken', data.accessToken);
   
   return data;
 });
@@ -161,8 +217,8 @@ export const initializeAuthAsync = createAsyncThunk<
   void,
   {state: RootState}
 >('auth/initializeAuth', async () => {
-  const accessToken = await SecureStore.getItemAsync('accessToken');
-  const refreshToken = await SecureStore.getItemAsync('refreshToken');
+  const accessToken = await storage.getItem('accessToken');
+  const refreshToken = await storage.getItem('refreshToken');
 
   if (!accessToken || !refreshToken) {
     throw new Error('No tokens found');
@@ -205,8 +261,8 @@ export const authSlice = createSlice({
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.isAuthenticated = false;
-      SecureStore.deleteItemAsync('accessToken');
-      SecureStore.deleteItemAsync('refreshToken');
+      storage.deleteItem('accessToken');
+      storage.deleteItem('refreshToken');
     },
     logOut: (state) => {
       console.log("Logging out, clearing tokens");
@@ -234,6 +290,18 @@ export const authSlice = createSlice({
       .addCase(forgotPasswordAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.error = (action.payload as string) || action.error.message || 'Failed to send reset link';
+      })
+      .addCase(confirmEmailAsync.pending, (state) => {
+        state.status = 'loading';
+        // Keep existing error until shown by AlertComponent
+      })
+      .addCase(confirmEmailAsync.fulfilled, (state) => {
+        state.status = 'idle';
+        state.error = null;
+      })
+      .addCase(confirmEmailAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = (action.payload as string) || action.error.message || 'Failed to confirm email';
       })
       .addCase(registerAsync.pending, (state) => {
         state.status = 'loading';
