@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import useInputField from "@/hooks/useInputField";
 import InputField from "@/components/InputField";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
@@ -14,6 +15,8 @@ import {
   ScrollView,
 } from "react-native";
 import ErrorBanner from "@/components/ErrorBanner";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { resetPasswordAsync, selectAuthStatus, selectAuthError } from "@/features/auth/authSlice";
 
 const passwordValidation = (value: string) => {
   if (value.length < 6) return "Password must be at least 6 characters.";
@@ -21,6 +24,13 @@ const passwordValidation = (value: string) => {
 };
 
 export default function Reset() {
+  const dispatch = useAppDispatch();
+  const status = useAppSelector(selectAuthStatus);
+  const error = useAppSelector(selectAuthError);
+  const { email, token } = useLocalSearchParams<{ email: string; token: string }>();
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
+  const [success, setSuccess] = useState(true);
+  
   const passwordField = useInputField({
     label: "Password",
     field: "password",
@@ -38,6 +48,7 @@ export default function Reset() {
   });
 
   const validateForm = () => {
+    setPasswordMismatch(false);
     const fields = [passwordField, confirmPasswordField];
     for (const field of fields) {
       if (field.validationFn) {
@@ -47,20 +58,49 @@ export default function Reset() {
     }
 
     if (passwordField.value !== confirmPasswordField.value) {
-      // Prefer inline error instead of alert
-      confirmPasswordField.validationFn?.(confirmPasswordField.value);
-      // quick banner message using ErrorBanner (pass via local state if needed)
-      // For now, return false to block submit
+      setPasswordMismatch(true);
       return false;
     }
 
     return true;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    setSuccess(false);
     if (!validateForm()) return;
-    // Immediately navigate to Activate screen upon setting the password
-    router.replace("/activate");
+
+    if (!email || !token) {
+      Alert.alert('Error', 'Invalid reset link. Please request a new password reset.');
+      return;
+    }
+
+    try {
+      const resultAction = await dispatch(
+        resetPasswordAsync({
+          email,
+          token,
+          newPassword: passwordField.value,
+        })
+      );
+
+      if (resetPasswordAsync.fulfilled.match(resultAction)) {
+        Alert.alert(
+          'Reset Successful',
+          'Please login with your new password.',
+          [
+            {
+              text: 'OK',
+              onPress: () => router.replace('/login'),
+            },
+          ]
+        );
+        setSuccess(true)
+      } else {
+        Alert.alert('Failed to reset password', 'The link may be invalid or expired.');
+      }
+    } catch (err) {
+      Alert.alert('An unexpected error occurred', 'Please try again.');
+    }
   };
 
   return (
@@ -91,6 +131,15 @@ export default function Reset() {
 
           <View style={styles.card}>
             <Text style={styles.cardTitle}>New password</Text>
+            
+            {passwordMismatch && (
+              <ErrorBanner message="Passwords do not match" />
+            )}
+            
+            {error && (
+              <ErrorBanner message={error} />
+            )}
+            
             <View style={styles.form}>
               <InputField
                 label="Password"
@@ -107,12 +156,23 @@ export default function Reset() {
                 secureTextEntry
               />
 
+              {success && (
+                <Text style={{ color: "#4BB543", textAlign: "center" }}>
+                  Password reset successfully!
+                </Text>
+              )}
+
               <TouchableOpacity
                 style={styles.signInButton}
                 onPress={handleSubmit}
                 activeOpacity={0.8}
+                disabled={status === 'loading'}
               >
-                <Text style={styles.signInButtonText}>Set Password</Text>
+                {status === 'loading' ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.signInButtonText}>Set Password</Text>
+                )}
               </TouchableOpacity>
             </View>
           </View>

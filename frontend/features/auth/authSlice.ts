@@ -111,6 +111,36 @@ export const confirmEmailAsync = createAsyncThunk<
   }
 );
 
+export const resetPasswordAsync = createAsyncThunk<
+  {message: string},
+  {email: string; token: string; newPassword: string},
+  {state: RootState; rejectValue: string}
+>(
+  'auth/resetPassword',
+  async (payload, thunkAPI) => {
+    const response = await fetch(`${backendApi}/api/Auth/reset-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      try {
+        const data = await response.json();
+        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to reset password');
+      } catch {
+        const text = await response.text();
+        return thunkAPI.rejectWithValue(text || 'Failed to reset password');
+      }
+    }
+
+    const data = await response.json();
+    return data;
+  }
+);
+
 // Async thunk for registration
 export const registerAsync = createAsyncThunk<
   {accessToken: string; accessTokenExpiresAt: string; refreshToken: string; refreshTokenExpiresAt: string},
@@ -290,6 +320,18 @@ export const authSlice = createSlice({
       .addCase(forgotPasswordAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.error = (action.payload as string) || action.error.message || 'Failed to send reset link';
+      })
+      .addCase(resetPasswordAsync.pending, (state) => {
+        state.status = 'loading';
+        // Keep existing error until shown by AlertComponent
+      })
+      .addCase(resetPasswordAsync.fulfilled, (state) => {
+        state.status = 'idle';
+        state.error = null;
+      })
+      .addCase(resetPasswordAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = (action.payload as string) || action.error.message || 'Failed to reset password';
       })
       .addCase(confirmEmailAsync.pending, (state) => {
         state.status = 'loading';
