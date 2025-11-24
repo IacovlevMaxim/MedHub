@@ -99,7 +99,7 @@ export default function RootLayout() {
               <Stack.Screen name="register" />
               <Stack.Screen name="reset" />
               <Stack.Screen name="reset-password" />
-              <Stack.Screen name="activate" />
+              <Stack.Screen name="confirm-email" />
               <Stack.Screen name="book-appointment" />
             </Stack>
           )}

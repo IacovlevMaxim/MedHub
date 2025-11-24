@@ -60,7 +60,7 @@ export default function Reset() {
         );
         if (forgotPasswordAsync.fulfilled.match(resultAction)) {
           setSentLink(true);
-          router.push("/reset-password");
+          // router.push("/reset-password");
         } else {
           // Rejected: global AlertComponent will show message from slice
         }
