@@ -35,6 +35,7 @@ interface AuthState {
   refreshToken: string | null;
   refreshTokenExpiresAt: string | null;
   isAuthenticated: boolean;
+  is2FAEnabled: boolean;
   status: 'idle' | 'loading' | 'failed';
   error: string | null;
 }
@@ -45,6 +46,7 @@ const initialState: AuthState = {
   refreshToken: null,
   refreshTokenExpiresAt: null,
   isAuthenticated: false,
+  is2FAEnabled: false,
   status: 'idle',
   error: null,
 };
@@ -210,7 +212,7 @@ export const refreshAccessTokenAsync = createAsyncThunk<
 
 // Template async thunk for login
 export const loginAsync = createAsyncThunk<
-  {accessToken: string; accessTokenExpiresAt: string; refreshToken: string; refreshTokenExpiresAt: string},
+  {accessToken?: string; accessTokenExpiresAt?: string; refreshToken?: string; refreshTokenExpiresAt?: string; requiresOtp?: boolean},
   {identifier: string; password: string},
   {state: RootState; rejectValue: string}
 >('auth/login', async (credentials, thunkAPI) => {
@@ -221,6 +223,11 @@ export const loginAsync = createAsyncThunk<
     },
     body: JSON.stringify(credentials),
   });
+
+  // Handle 206 - OTP required
+  if (response.status === 206) {
+    return { requiresOtp: true };
+  }
 
   if (!response.ok) {
     try {
@@ -241,20 +248,117 @@ export const loginAsync = createAsyncThunk<
   return data;
 });
 
+// Async thunk for OTP verification
+export const verifyOtpAsync = createAsyncThunk<
+  {accessToken: string; accessTokenExpiresAt: string; refreshToken: string; refreshTokenExpiresAt: string},
+  {identifier: string; password: string; otpCode: string},
+  {state: RootState; rejectValue: string}
+>('auth/verifyOtp', async (credentials, thunkAPI) => {
+  const response = await fetch(`${backendApi}/api/Auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(credentials),
+  });
+
+  if (!response.ok) {
+    try {
+      const data = await response.json();
+      return thunkAPI.rejectWithValue(data.message || data.error || 'Invalid OTP code');
+    } catch {
+      const text = await response.text();
+      return thunkAPI.rejectWithValue(text || 'Invalid OTP code');
+    }
+  }
+
+  const data = await response.json();
+  
+  // Save tokens to storage
+  await storage.setItem('refreshToken', data.refreshToken);
+  await storage.setItem('accessToken', data.accessToken);
+  
+  return data;
+});
+
+// Async thunk for 2FA configuration
+export const configure2FAAsync = createAsyncThunk<
+  {requiresOtp?: boolean; enabled?: boolean; message?: string},
+  {enable: boolean; otpCode?: string},
+  {state: RootState; rejectValue: string}
+>('auth/configure2FA', async ({enable, otpCode}, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const accessToken = state.auth.accessToken;
+
+  const response = await fetch(`${backendApi}/api/Auth/configure-2fa`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({enable, otpCode}),
+  });
+
+  // Handle 206 - OTP required
+  if (response.status === 206) {
+    const data = await response.json();
+    return {requiresOtp: true, message: data.message};
+  }
+
+  if (!response.ok) {
+    try {
+      const data = await response.json();
+      return thunkAPI.rejectWithValue(data.message || data.error || '2FA configuration failed');
+    } catch {
+      const text = await response.text();
+      return thunkAPI.rejectWithValue(text || '2FA configuration failed');
+    }
+  }
+
+  const data = await response.json();
+  return {enabled: enable, message: data.message};
+});
+
+// Async thunk to get 2FA status
+export const get2FAStatusAsync = createAsyncThunk<
+  {enabled: boolean},
+  void,
+  {state: RootState; rejectValue: string}
+>('auth/get2FAStatus', async (_, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const accessToken = state.auth.accessToken;
+
+  const response = await fetch(`${backendApi}/api/Auth/2fa-status`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    // If endpoint doesn't exist, assume 2FA is disabled
+    return {enabled: false};
+  }
+
+  const data = await response.json();
+  return {enabled: data.enabled || false};
+});
+
 // Add a thunk to read tokens from SecureStore
 export const initializeAuthAsync = createAsyncThunk<
-  {accessToken: string; refreshToken: string},
+  {accessToken: string; refreshToken: string; is2FAEnabled: boolean},
   void,
   {state: RootState}
 >('auth/initializeAuth', async () => {
   const accessToken = await storage.getItem('accessToken');
   const refreshToken = await storage.getItem('refreshToken');
+  const is2FAEnabledStr = await storage.getItem('is2FAEnabled');
 
   if (!accessToken || !refreshToken) {
     throw new Error('No tokens found');
   }
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, is2FAEnabled: is2FAEnabledStr === 'true' };
 });
 
 export const authSlice = createSlice({
@@ -301,6 +405,7 @@ export const authSlice = createSlice({
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.isAuthenticated = false;
+      state.is2FAEnabled = false;
       state.error = null;
     },
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
@@ -387,10 +492,15 @@ export const authSlice = createSlice({
       })
       .addCase(loginAsync.fulfilled, (state, action) => {
         state.status = 'idle';
-        state.accessToken = action.payload.accessToken;
-        state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
-        state.refreshToken = action.payload.refreshToken;
-        state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
+        // If OTP is required, don't set tokens yet
+        if (action.payload.requiresOtp) {
+          state.error = null;
+          return;
+        }
+        state.accessToken = action.payload.accessToken!;
+        state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt!;
+        state.refreshToken = action.payload.refreshToken!;
+        state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt!;
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -399,10 +509,46 @@ export const authSlice = createSlice({
         state.isAuthenticated = false;
         state.error = (action.payload as string) || action.error.message || 'Login failed';
       })
+      .addCase(verifyOtpAsync.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(verifyOtpAsync.fulfilled, (state, action) => {
+        state.status = 'idle';
+        state.accessToken = action.payload.accessToken;
+        state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
+        state.refreshToken = action.payload.refreshToken;
+        state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
+        state.isAuthenticated = true;
+        state.error = null;
+      })
+      .addCase(verifyOtpAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = (action.payload as string) || action.error.message || 'Invalid OTP code';
+      })
+      .addCase(configure2FAAsync.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(configure2FAAsync.fulfilled, (state, action) => {
+        state.status = 'idle';
+        state.error = null;
+        // Update 2FA status when successfully configured (not when OTP is required)
+        if (action.payload.enabled !== undefined) {
+          state.is2FAEnabled = action.payload.enabled;
+          storage.setItem('is2FAEnabled', action.payload.enabled.toString());
+        }
+      })
+      .addCase(configure2FAAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = (action.payload as string) || action.error.message || '2FA configuration failed';
+      })
+      .addCase(get2FAStatusAsync.fulfilled, (state) => {
+        state.status = 'idle';
+      })
       .addCase(initializeAuthAsync.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.isAuthenticated = true;
+        state.is2FAEnabled = action.payload.is2FAEnabled || false;
       })
       .addCase(initializeAuthAsync.rejected, (state) => {
         state.isAuthenticated = false;
@@ -428,5 +574,6 @@ export const selectAccessTokenExpiresAt = (state: RootState) => state.auth.acces
 export const selectRefreshTokenExpiresAt = (state: RootState) => state.auth.refreshTokenExpiresAt;
 export const selectAuthStatus = (state: RootState) => state.auth.status;
 export const selectAuthError = (state: RootState) => state.auth.error;
+export const selectIs2FAEnabled = (state: RootState) => state.auth.is2FAEnabled;
 
 export default authSlice.reducer;

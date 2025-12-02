@@ -1,18 +1,80 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Switch,
+  Alert,
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
-import { useAppDispatch } from "@/hooks/useRedux";
-import { clearTokens, logOut } from "@/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import {
+  clearTokens,
+  logOut,
+  configure2FAAsync,
+  selectAuthStatus,
+  selectIs2FAEnabled,
+} from "@/features/auth/authSlice";
 import { router } from "expo-router";
 
 export default function ProfileView() {
   const dispatch = useAppDispatch();
+  const status = useAppSelector(selectAuthStatus);
+  const is2FAEnabled = useAppSelector(selectIs2FAEnabled);
+  const [isLoading2FA, setIsLoading2FA] = useState(false);
+
+  // Don't load 2FA status on mount since endpoint doesn't exist
+  // User will see it as disabled by default
+
+  const handle2FAToggle = async (value: boolean) => {
+    if (isLoading2FA) return;
+
+    setIsLoading2FA(true);
+
+    try {
+      const resultAction = await dispatch(configure2FAAsync({ enable: value }));
+
+      if (configure2FAAsync.fulfilled.match(resultAction)) {
+        if (resultAction.payload.requiresOtp) {
+          // OTP sent to email, navigate to OTP page
+          setIsLoading2FA(false);
+          router.push({
+            pathname: "/otp-verification" as any,
+            params: {
+              identifier: "2fa-setup",
+              password: "2fa-setup",
+              is2FASetup: "true",
+              enable: value ? "true" : "false",
+            },
+          });
+        } else {
+          // 2FA successfully configured (with OTP already verified)
+          setIsLoading2FA(false);
+        }
+      } else {
+        // Failed
+        setIsLoading2FA(false);
+      }
+    } catch (error) {
+      setIsLoading2FA(false);
+    }
+  };
+
+  const promptForOTP = (enableValue: boolean) => {
+    // Navigate to a dedicated 2FA setup page with OTP input
+    router.push({
+      pathname: "/otp-verification" as any,
+      params: {
+        identifier: "2fa-setup",
+        password: "2fa-setup",
+        is2FASetup: "true",
+        enable: enableValue ? "true" : "false",
+      },
+    });
+  };
+
   const patientInfo = {
     name: "John Anderson",
     dateOfBirth: "1985-03-15",
@@ -168,6 +230,30 @@ export default function ProfileView() {
       {/* Settings & Actions */}
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Settings & Privacy</Text>
+
+        {/* 2FA Toggle */}
+        <View style={styles.actionButton}>
+          <Feather
+            name="shield"
+            size={20}
+            color="#4F8EF7"
+            style={{ marginRight: 12 }}
+          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.actionText}>Two-Factor Authentication</Text>
+            <Text style={styles.actionSubtext}>
+              Require OTP code when logging in
+            </Text>
+          </View>
+          <Switch
+            value={is2FAEnabled}
+            onValueChange={handle2FAToggle}
+            disabled={isLoading2FA}
+            trackColor={{ false: "#D0D0D0", true: "#4F8EF7" }}
+            thumbColor={is2FAEnabled ? "#fff" : "#f4f3f4"}
+          />
+        </View>
+
         <TouchableOpacity style={styles.actionButton}>
           <Feather
             name="bell"
@@ -351,6 +437,7 @@ const styles = StyleSheet.create({
     borderColor: "#e3e8f0",
   },
   actionText: { color: "#222", fontWeight: "bold", fontSize: 15 },
+  actionSubtext: { fontSize: 12, color: "#888", marginTop: 2 },
   appInfoCard: {
     backgroundColor: "#dbeafe",
     borderRadius: 10,

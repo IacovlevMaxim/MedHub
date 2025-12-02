@@ -98,9 +98,21 @@ export default function Login() {
           })
         );
         if (loginAsync.fulfilled.match(resultAction)) {
-          console.log("Login successful");
-          // Login successful, navigation handled elsewhere
-          router.replace("/(tabs)");
+          // Check if OTP is required (206 response)
+          if (resultAction.payload.requiresOtp) {
+            console.log("OTP required, navigating to OTP verification");
+            router.push({
+              pathname: "/otp-verification" as any,
+              params: {
+                identifier: emailField.value,
+                password: passwordField.value,
+              },
+            });
+          } else {
+            // Direct login successful (200 response)
+            console.log("Login successful");
+            router.replace("/(tabs)");
+          }
         } else {
           // Rejected: global AlertComponent will show message from slice
         }
@@ -182,6 +194,23 @@ export default function Login() {
                   <Text style={styles.ghostButtonText}>Forgot Password?</Text>
                 </TouchableOpacity>
               </Link>
+              {/* TEMPORARY: Test OTP flow */}
+              <TouchableOpacity
+                style={[styles.ghostButton, { marginTop: 8 }]}
+                onPress={() =>
+                  router.push({
+                    pathname: "/otp-verification" as any,
+                    params: {
+                      identifier: "test@example.com",
+                      password: "testpassword",
+                    },
+                  })
+                }
+              >
+                <Text style={[styles.ghostButtonText, { color: "#FF6B6B" }]}>
+                  🧪 Test OTP Page
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
 
