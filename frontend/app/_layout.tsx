@@ -16,6 +16,7 @@ import LabResultsView from "./(tabs)/lab-results";
 import AppointmentsView from "./(tabs)/appointments";
 import AlertComponent from "@/components/AlertComponent";
 import { AppointmentsProvider } from "@/contexts/AppointmentsContext";
+import { TempCredentialsProvider } from "@/contexts/TempCredentialsContext";
 
 const handleSearchPress = () => {
   Alert.alert("Search", "Search functionality coming soon!");
@@ -82,29 +83,31 @@ export default function RootLayout() {
 
   return (
     <Provider store={store}>
-      <AppointmentsProvider>
-        <View style={styles.container}>
-          {/* Global alert listener */}
-          <AlertComponent />
-          {isTabs ? (
-            <Header
-              userName="Mr. Williamson"
-              onSearchPress={handleSearchPress}
-              onNotificationPress={handleNotificationPress}
-            />
-          ) : (
-            <Stack screenOptions={{ headerShown: true }}>
-              <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="login" />
-              <Stack.Screen name="register" />
-              <Stack.Screen name="reset" />
-              <Stack.Screen name="reset-password" />
-              <Stack.Screen name="confirm-email" />
-              <Stack.Screen name="book-appointment" />
-            </Stack>
-          )}
-        </View>
-      </AppointmentsProvider>
+      <TempCredentialsProvider>
+        <AppointmentsProvider>
+          <View style={styles.container}>
+            {/* Global alert listener */}
+            <AlertComponent />
+            {isTabs ? (
+              <Header
+                userName="Mr. Williamson"
+                onSearchPress={handleSearchPress}
+                onNotificationPress={handleNotificationPress}
+              />
+            ) : (
+              <Stack screenOptions={{ headerShown: true }}>
+                <Stack.Screen name="(tabs)" />
+                <Stack.Screen name="login" />
+                <Stack.Screen name="register" />
+                <Stack.Screen name="reset" />
+                <Stack.Screen name="reset-password" />
+                <Stack.Screen name="confirm-email" />
+                <Stack.Screen name="book-appointment" />
+              </Stack>
+            )}
+          </View>
+        </AppointmentsProvider>
+      </TempCredentialsProvider>
     </Provider>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -17,13 +17,14 @@ import {
   loginAsync,
   selectAuthStatus,
 } from "@/features/auth/authSlice";
-import * as SecureStore from "expo-secure-store";
+import { useTempCredentials } from "@/contexts/TempCredentialsContext";
 
 export default function OtpVerification() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const params = useLocalSearchParams();
   const status = useAppSelector(selectAuthStatus);
+  const { identifier, password, clearCredentials } = useTempCredentials();
 
   // Get 2FA setup flag from params (this is safe)
   const { is2FASetup, enable } = params as {
@@ -32,36 +33,9 @@ export default function OtpVerification() {
   };
 
   const is2FASetupMode = is2FASetup === "true";
-  const [identifier, setIdentifier] = useState("");
-  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const inputRefs = useRef<Array<TextInput | null>>([]);
-
-  // Load credentials from secure storage on mount
-  useEffect(() => {
-    const loadCredentials = async () => {
-      if (!is2FASetupMode) {
-        // Only load credentials for login OTP, not 2FA setup
-        if (Platform.OS === "web") {
-          const tempId = sessionStorage.getItem("tempIdentifier");
-          const tempPass = sessionStorage.getItem("tempPassword");
-          if (tempId && tempPass) {
-            setIdentifier(tempId);
-            setPassword(tempPass);
-          }
-        } else {
-          const tempId = await SecureStore.getItemAsync("tempIdentifier");
-          const tempPass = await SecureStore.getItemAsync("tempPassword");
-          if (tempId && tempPass) {
-            setIdentifier(tempId);
-            setPassword(tempPass);
-          }
-        }
-      }
-    };
-    loadCredentials();
-  }, [is2FASetupMode]);
 
   const handleOtpChange = (value: string, index: number) => {
     // Only allow digits
@@ -130,14 +104,8 @@ export default function OtpVerification() {
 
         if (verifyOtpAsync.fulfilled.match(resultAction)) {
           console.log("OTP verification successful");
-          // Clear temporary credentials from storage
-          if (Platform.OS === "web") {
-            sessionStorage.removeItem("tempIdentifier");
-            sessionStorage.removeItem("tempPassword");
-          } else {
-            await SecureStore.deleteItemAsync("tempIdentifier");
-            await SecureStore.deleteItemAsync("tempPassword");
-          }
+          // Clear temporary credentials from context
+          clearCredentials();
           router.replace("/(tabs)");
         } else {
           setError("Invalid OTP code. Please try again.");

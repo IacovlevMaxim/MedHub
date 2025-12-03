@@ -6,7 +6,7 @@ import {
   setAuthenticated,
   initializeAuthAsync,
 } from "@/features/auth/authSlice";
-import * as SecureStore from "expo-secure-store";
+import { useTempCredentials } from "@/contexts/TempCredentialsContext";
 
 import useInputField from "@/hooks/useInputField";
 import { Link, useRouter } from "expo-router";
@@ -46,6 +46,7 @@ export default function Login() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const status = useAppSelector(selectAuthStatus);
+  const { setCredentials } = useTempCredentials();
   const emailField = useInputField({
     label: "Email or Username",
     field: "email",
@@ -102,20 +103,8 @@ export default function Login() {
           // Check if OTP is required (206 response)
           if (resultAction.payload.requiresOtp) {
             console.log("OTP required, navigating to OTP verification");
-            // Store credentials securely for OTP verification
-            if (Platform.OS === "web") {
-              sessionStorage.setItem("tempIdentifier", emailField.value);
-              sessionStorage.setItem("tempPassword", passwordField.value);
-            } else {
-              await SecureStore.setItemAsync(
-                "tempIdentifier",
-                emailField.value
-              );
-              await SecureStore.setItemAsync(
-                "tempPassword",
-                passwordField.value
-              );
-            }
+            // Store credentials in context for OTP verification
+            setCredentials(emailField.value, passwordField.value);
             router.push("/otp-verification");
           } else {
             // Direct login successful (200 response)
