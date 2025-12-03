@@ -6,6 +6,7 @@ import {
   setAuthenticated,
   initializeAuthAsync,
 } from "@/features/auth/authSlice";
+import { useTempCredentials } from "@/contexts/TempCredentialsContext";
 
 import useInputField from "@/hooks/useInputField";
 import { Link, useRouter } from "expo-router";
@@ -45,6 +46,7 @@ export default function Login() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const status = useAppSelector(selectAuthStatus);
+  const { setCredentials } = useTempCredentials();
   const emailField = useInputField({
     label: "Email or Username",
     field: "email",
@@ -98,9 +100,17 @@ export default function Login() {
           })
         );
         if (loginAsync.fulfilled.match(resultAction)) {
-          console.log("Login successful");
-          // Login successful, navigation handled elsewhere
-          router.replace("/(tabs)");
+          // Check if OTP is required (206 response)
+          if (resultAction.payload.requiresOtp) {
+            console.log("OTP required, navigating to OTP verification");
+            // Store credentials in context for OTP verification
+            setCredentials(emailField.value, passwordField.value);
+            router.push("/otp-verification");
+          } else {
+            // Direct login successful (200 response)
+            console.log("Login successful");
+            router.replace("/(tabs)");
+          }
         } else {
           // Rejected: global AlertComponent will show message from slice
         }
