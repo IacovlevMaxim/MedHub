@@ -11,6 +11,7 @@ interface AuthState {
   refreshToken: string | null;
   refreshTokenExpiresAt: string | null;
   userId: string | null;
+  roles: string[];
   isAuthenticated: boolean;
   is2FAEnabled: boolean;
   status: 'idle' | 'loading' | 'failed';
@@ -23,6 +24,7 @@ const initialState: AuthState = {
   refreshToken: null,
   refreshTokenExpiresAt: null,
   userId: null,
+  roles: [],
   isAuthenticated: false,
   is2FAEnabled: false,
   status: 'idle',
@@ -354,6 +356,46 @@ export const initializeAuthAsync = createAsyncThunk<
   return { accessToken, refreshToken, is2FAEnabled: is2FAEnabledStr === 'true' };
 });
 
+// Async thunk to fetch user roles
+export const fetchUserRolesAsync = createAsyncThunk<
+  {roles: string[]},
+  void,
+  {state: RootState; rejectValue: string}
+>('auth/fetchUserRoles', async (_, {getState, rejectWithValue}) => {
+  const state = getState();
+  const userId = state.auth.userId;
+  const accessToken = state.auth.accessToken;
+
+  if (!userId) {
+    return rejectWithValue('User ID not available');
+  }
+
+  if (!accessToken) {
+    return rejectWithValue('Access token not available');
+  }
+
+  const response = await fetch(`${backendApi}/api/User/${userId}`, {
+    method: 'GET',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    try {
+      const data = await response.json();
+      return rejectWithValue(data.message || data.error || 'Failed to fetch user roles');
+    } catch {
+      const text = await response.text();
+      return rejectWithValue(text || 'Failed to fetch user roles');
+    }
+  }
+
+  const data = await response.json();
+  return { roles: data.roles || [] };
+});
+
 export const authSlice = createSlice({
   name: 'auth',
   initialState,
@@ -504,6 +546,7 @@ export const authSlice = createSlice({
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt!;
         state.refreshToken = action.payload.refreshToken!;
         state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt!;
+        state.userId = decodeJwtUserId(action.payload.accessToken!);
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -560,6 +603,18 @@ export const authSlice = createSlice({
       })
       .addCase(initializeAuthAsync.rejected, (state) => {
         state.isAuthenticated = false;
+      })
+      .addCase(fetchUserRolesAsync.pending, (state) => {
+        state.status = 'loading';
+      })
+      .addCase(fetchUserRolesAsync.fulfilled, (state, action) => {
+        state.status = 'idle';
+        state.roles = action.payload.roles;
+        state.error = null;
+      })
+      .addCase(fetchUserRolesAsync.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = (action.payload as string) || action.error.message || 'Failed to fetch user roles';
       });
   },
 });
@@ -578,6 +633,7 @@ export const {
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
 export const selectUserId = (state: RootState) => state.auth.userId;
+export const selectUserRoles = (state: RootState) => state.auth.roles;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectAccessTokenExpiresAt = (state: RootState) => state.auth.accessTokenExpiresAt;
 export const selectRefreshTokenExpiresAt = (state: RootState) => state.auth.refreshTokenExpiresAt;

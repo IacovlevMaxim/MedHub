@@ -4,7 +4,13 @@ import { useRouter } from "expo-router";
 import { useAppDispatch } from "@/hooks/useRedux";
 
 import { useAppSelector } from "@/hooks/useRedux";
-import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated } from "@/features/auth/authSlice";
+import { 
+  initializeAuthAsync, 
+  refreshAccessTokenAsync, 
+  selectIsAuthenticated,
+  fetchUserRolesAsync,
+  selectUserRoles 
+} from "@/features/auth/authSlice";
 import { BottomNavigation } from "../navigation-bar";
 import { TabsContext } from "./tabContext";
 
@@ -41,15 +47,24 @@ export default function TabLayout() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const router = useRouter();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const userRoles = useAppSelector(selectUserRoles);
 
   useEffect(() => {
     const checkStoredTokens = async () => {
       try {
         const resultAction = await dispatch(initializeAuthAsync());
-        if (initializeAuthAsync.fulfilled.match(resultAction)) return;
+        if (initializeAuthAsync.fulfilled.match(resultAction)) {
+          // Fetch user roles after successful initialization
+          await dispatch(fetchUserRolesAsync());
+          return;
+        }
 
         const resultRefresh = await dispatch(refreshAccessTokenAsync());
-        if (refreshAccessTokenAsync.fulfilled.match(resultRefresh)) return;
+        if (refreshAccessTokenAsync.fulfilled.match(resultRefresh)) {
+          // Fetch user roles after successful token refresh
+          await dispatch(fetchUserRolesAsync());
+          return;
+        }
 
         router.replace("/login");
       } catch (error) {
@@ -73,7 +88,11 @@ export default function TabLayout() {
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>
       <View style={styles.container}>
         <View style={styles.content}>{tabComponents[activeTab]}</View>
-        <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
+        <BottomNavigation 
+          activeTab={activeTab} 
+          onTabChange={setActiveTab} 
+          userRoles={userRoles}
+        />
       </View>
     </TabsContext.Provider>
   );

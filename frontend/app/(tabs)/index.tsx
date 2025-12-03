@@ -8,9 +8,13 @@ import {
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { useTabs } from "@/app/(tabs)/tabContext";
+import { useAppSelector } from "@/hooks/useRedux";
+import { selectUserRoles } from "@/features/auth/authSlice";
 
 export default function PatientDashboard() {
   const { setActiveTab } = useTabs();
+  const userRoles = useAppSelector(selectUserRoles);
+  const isDoctor = userRoles.includes("Doctor");
 
   const upcomingAppointments = [
     {
@@ -55,9 +59,11 @@ export default function PatientDashboard() {
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={styles.headerTitle}>Good Morning, John</Text>
+            <Text style={styles.headerTitle}>
+              {isDoctor ? "Good Morning, Doctor" : "Good Morning, John"}
+            </Text>
             <Text style={styles.headerSubtitle}>
-              How are you feeling today?
+              {isDoctor ? "Your appointments for today" : "How are you feeling today?"}
             </Text>
           </View>
           <TouchableOpacity
@@ -70,29 +76,31 @@ export default function PatientDashboard() {
         </View>
       </View>
 
-      {/* Quick Stats */}
-      <View style={styles.statsRow}>
-        <View style={styles.statCard}>
-          <Feather
-            name="activity"
-            size={32}
-            color="#4F8EF7"
-            style={styles.statIcon}
-          />
-          <Text style={styles.statNumber}>2</Text>
-          <Text style={styles.statLabel}>Upcoming</Text>
+      {/* Quick Stats - Only show for patients */}
+      {!isDoctor && (
+        <View style={styles.statsRow}>
+          <View style={styles.statCard}>
+            <Feather
+              name="activity"
+              size={32}
+              color="#4F8EF7"
+              style={styles.statIcon}
+            />
+            <Text style={styles.statNumber}>2</Text>
+            <Text style={styles.statLabel}>Upcoming</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Feather
+              name="file-text"
+              size={32}
+              color="#FFC107"
+              style={styles.statIcon}
+            />
+            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statLabel}>New Results</Text>
+          </View>
         </View>
-        <View style={styles.statCard}>
-          <Feather
-            name="file-text"
-            size={32}
-            color="#FFC107"
-            style={styles.statIcon}
-          />
-          <Text style={styles.statNumber}>1</Text>
-          <Text style={styles.statLabel}>New Results</Text>
-        </View>
-      </View>
+      )}
 
       {/* Upcoming Appointments */}
       <View style={styles.section}>
@@ -126,58 +134,62 @@ export default function PatientDashboard() {
         ))}
       </View>
 
-      {/* Recent Results */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Feather name="file-text" size={20} color="#4F8EF7" />
-          <Text style={styles.sectionTitle}>Recent Results</Text>
-        </View>
-        {recentResults.map((result) => (
-          <View key={result.id} style={styles.resultCard}>
-            <View style={styles.resultLeft}>
-              <View style={styles.resultIconBox}>
-                <Feather name="file-text" size={24} color="#4F8EF7" />
-              </View>
-              <View>
-                <View style={styles.resultTestRow}>
-                  <Text style={styles.resultTest}>{result.test}</Text>
-                  {result.new && (
-                    <View style={styles.badgeNew}>
-                      <Text style={styles.badgeNewText}>New</Text>
-                    </View>
-                  )}
-                </View>
-                <Text style={styles.resultDate}>{result.date}</Text>
-              </View>
-            </View>
-            <View
-              style={[
-                styles.badge,
-                result.status === "normal"
-                  ? styles.badgeNormal
-                  : styles.badgeHigh,
-              ]}
-            >
-              <Text style={styles.badgeText}>{result.status}</Text>
-            </View>
+      {/* Recent Results - Only show for patients */}
+      {!isDoctor && (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Feather name="file-text" size={20} color="#4F8EF7" />
+            <Text style={styles.sectionTitle}>Recent Results</Text>
           </View>
-        ))}
-      </View>
-
-      {/* Quick Actions */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="calendar" size={24} color="#4F8EF7" />
-            <Text style={styles.actionText}>Book Appointment</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
-            <Feather name="bell" size={24} color="#4F8EF7" />
-            <Text style={styles.actionText}>Set Reminder</Text>
-          </TouchableOpacity>
+          {recentResults.map((result) => (
+            <View key={result.id} style={styles.resultCard}>
+              <View style={styles.resultLeft}>
+                <View style={styles.resultIconBox}>
+                  <Feather name="file-text" size={24} color="#4F8EF7" />
+                </View>
+                <View>
+                  <View style={styles.resultTestRow}>
+                    <Text style={styles.resultTest}>{result.test}</Text>
+                    {result.new && (
+                      <View style={styles.badgeNew}>
+                        <Text style={styles.badgeNewText}>New</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.resultDate}>{result.date}</Text>
+                </View>
+              </View>
+              <View
+                style={[
+                  styles.badge,
+                  result.status === "normal"
+                    ? styles.badgeNormal
+                    : styles.badgeHigh,
+                ]}
+              >
+                <Text style={styles.badgeText}>{result.status}</Text>
+              </View>
+            </View>
+          ))}
         </View>
-      </View>
+      )}
+
+      {/* Quick Actions - Only show for patients */}
+      {!isDoctor && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.actionsRow}>
+            <TouchableOpacity style={styles.actionButton}>
+              <Feather name="calendar" size={24} color="#4F8EF7" />
+              <Text style={styles.actionText}>Book Appointment</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton}>
+              <Feather name="bell" size={24} color="#4F8EF7" />
+              <Text style={styles.actionText}>Set Reminder</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
     </ScrollView>
     // </AuthGuard>
   );

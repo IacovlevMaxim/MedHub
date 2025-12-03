@@ -1,23 +1,41 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
+
 interface BottomNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  userRoles: string[];
 }
 
-const tabs = [
+interface Tab {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+// Tabs for patients
+const patientTabs: Tab[] = [
   { id: "dashboard", label: "Home", icon: "home" },
-  { id: "appointments", label: "Appointments", icon: "calendar" },
   { id: "results", label: "Results", icon: "activity" },
+  { id: "chat", label: "Chatbot", icon: "message-circle" },
+];
+
+// Tabs for doctors
+const doctorTabs: Tab[] = [
+  { id: "dashboard", label: "Home", icon: "home" },
   { id: "history", label: "History", icon: "file-text" },
-  { id: "chat", label: "ChatBot", icon: "message-circle" },
+  { id: "appointments", label: "Appointments", icon: "calendar" },
 ];
 
 export function BottomNavigation({
   activeTab,
   onTabChange,
+  userRoles,
 }: BottomNavigationProps) {
+  // Determine which tabs to show based on roles
+  const isDoctor = userRoles.includes("Doctor");
+  const tabs = isDoctor ? doctorTabs : patientTabs;
   return (
     <View style={styles.navContainer}>
       <View style={styles.navRow}>
