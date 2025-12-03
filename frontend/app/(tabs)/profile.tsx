@@ -249,7 +249,7 @@ export default function ProfileView() {
           />
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.actionButton}
           onPress={() => router.push("/change-password")}
         >

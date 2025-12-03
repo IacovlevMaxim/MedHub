@@ -34,8 +34,8 @@ export default function ChangePassword() {
 
   // Hide browser's built-in password reveal button on web
   React.useEffect(() => {
-    if (Platform.OS === 'web') {
-      const style = document.createElement('style');
+    if (Platform.OS === "web") {
+      const style = document.createElement("style");
       style.innerHTML = `
         input[type="password"]::-ms-reveal,
         input[type="password"]::-ms-clear {
@@ -81,17 +81,20 @@ export default function ChangePassword() {
       }
 
       // Extract userId from JWT token
-      const tokenPayload = JSON.parse(atob(accessToken.split('.')[1]));
-      console.log('Token payload:', tokenPayload);
-      
+      const tokenPayload = JSON.parse(atob(accessToken.split(".")[1]));
+      console.log("Token payload:", tokenPayload);
+
       // Try multiple possible claim names for userId
-      const userId = tokenPayload.nameid || 
-                     tokenPayload.sub || 
-                     tokenPayload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
-                     tokenPayload.userId ||
-                     tokenPayload.id;
-      
-      console.log('Extracted userId:', userId);
+      const userId =
+        tokenPayload.nameid ||
+        tokenPayload.sub ||
+        tokenPayload[
+          "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+        ] ||
+        tokenPayload.userId ||
+        tokenPayload.id;
+
+      console.log("Extracted userId:", userId);
 
       if (!userId) {
         setError("Could not extract user ID from token. Please log in again.");
@@ -103,9 +106,12 @@ export default function ChangePassword() {
         OldPassword: oldPassword,
         NewPassword: newPassword,
       };
-      
-      console.log('Sending request to:', `${backendApi}/api/User/${userId}/change-password`);
-      console.log('Request body:', requestBody);
+
+      console.log(
+        "Sending request to:",
+        `${backendApi}/api/User/${userId}/change-password`
+      );
+      console.log("Request body:", requestBody);
 
       const response = await fetch(
         `${backendApi}/api/User/${userId}/change-password`,
@@ -119,11 +125,11 @@ export default function ChangePassword() {
         }
       );
 
-      console.log('Response status:', response.status);
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
         const data = await response.text();
-        console.log('Error response:', data);
+        console.log("Error response:", data);
         let errorMessage = "Failed to change password";
         try {
           const jsonData = JSON.parse(data);
@@ -149,8 +155,10 @@ export default function ChangePassword() {
         router.back();
       }, 2000);
     } catch (err) {
-      console.error('Catch block error:', err);
-      setError(`An error occurred: ${err instanceof Error ? err.message : String(err)}`);
+      console.error("Catch block error:", err);
+      setError(
+        `An error occurred: ${err instanceof Error ? err.message : String(err)}`
+      );
       setLoading(false);
     }
   };
@@ -265,7 +273,10 @@ export default function ChangePassword() {
           {success ? <Text style={styles.successText}>{success}</Text> : null}
 
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+            style={[
+              styles.submitButton,
+              loading && styles.submitButtonDisabled,
+            ]}
             onPress={handleSubmit}
             disabled={loading}
           >
