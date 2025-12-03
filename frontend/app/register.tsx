@@ -23,28 +23,12 @@ import {
 import { Colors } from "@/constants/Colors";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import ErrorBanner from "@/components/ErrorBanner";
+import { emailValidation, idnpValidation, passwordValidation } from "@/utils/registerValidation";
 
 interface RegisterBody {
   [key: string]: string;
   date_of_birth: string;
 }
-
-const emailValidation = (value: string) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(value)) return "Enter a valid email address.";
-  return undefined;
-};
-
-const idnpValidation = (value: string) => {
-  const idnpRegex = /^\d{13}$/; // Example: IDNP must be exactly 13 digits
-  if (!idnpRegex.test(value)) return "IDNP must be exactly 13 digits.";
-  return undefined;
-};
-
-const passwordValidation = (value: string) => {
-  if (value.length < 6) return "Password must be at least 6 characters.";
-  return undefined;
-};
 
 export default function Register() {
   const dispatch = useAppDispatch();

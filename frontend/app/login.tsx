@@ -20,27 +20,8 @@ import {
   ScrollView,
 } from "react-native";
 import React from "react";
+import { identifierValidation, passwordValidation } from "@/utils/loginValidation";
 // import Svg, { Path } from 'react-native-svg';
-
-// Accept either a valid email OR a username (non-empty, min 3 chars)
-const identifierValidation = (value: string) => {
-  const trimmed = value.trim();
-  if (!trimmed) return "This field is required.";
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (trimmed.includes("@")) {
-    return emailRegex.test(trimmed)
-      ? undefined
-      : "Enter a valid email address.";
-  }
-  // Username path: basic length check
-  if (trimmed.length < 3) return "Username must be at least 3 characters.";
-  return undefined;
-};
-
-const passwordValidation = (value: string) => {
-  if (value.length < 6) return "Password must be at least 6 characters.";
-  return undefined;
-};
 
 export default function Login() {
   const dispatch = useAppDispatch();
