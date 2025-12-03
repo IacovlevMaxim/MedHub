@@ -5,6 +5,7 @@ import {
   selectAuthStatus,
   setAuthenticated,
   initializeAuthAsync,
+  fetchUserRolesAsync,
 } from "@/features/auth/authSlice";
 import { useTempCredentials } from "@/contexts/TempCredentialsContext";
 
@@ -91,6 +92,8 @@ export default function Login() {
           } else {
             // Direct login successful (200 response)
             console.log("Login successful");
+            // Fetch user roles after successful login
+            await dispatch(fetchUserRolesAsync());
             router.replace("/(tabs)");
           }
         } else {

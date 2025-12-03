@@ -30,7 +30,7 @@ export default function ChatBot() {
   const messages = useAppSelector(selectMessages);
   const status = useAppSelector(selectChatbotStatus);
   const error = useAppSelector(selectChatbotError);
-  
+
   const [historyOpen, setHistoryOpen] = useState(false);
   const [draft, setDraft] = useState("");
   const [inputHeight, setInputHeight] = useState(40);
@@ -122,20 +122,20 @@ export default function ChatBot() {
   ).current;
 
   const onSend = async () => {
-    if (!draft.trim() || status === 'loading') return;
-    
+    if (!draft.trim() || status === "loading") return;
+
     const messageText = draft.trim();
     setDraft("");
     setInputHeight(40);
-    
+
     // Add user message to state
     dispatch(addUserMessage(messageText));
-    
+
     // Send message to backend
     try {
       await dispatch(sendChatMessageAsync({ message: messageText })).unwrap();
     } catch (err) {
-      console.error('Failed to send message:', err);
+      console.error("Failed to send message:", err);
     }
   };
 
@@ -173,10 +173,16 @@ export default function ChatBot() {
           <View style={styles.chatArea}>
             {messages.length === 0 ? (
               <View style={styles.emptyState}>
-                <Feather name="message-circle" size={64} color="#4F8EF7" style={{ opacity: 0.5 }} />
+                <Feather
+                  name="message-circle"
+                  size={64}
+                  color="#4F8EF7"
+                  style={{ opacity: 0.5 }}
+                />
                 <Text style={styles.emptyTitle}>Welcome to MedBot</Text>
                 <Text style={styles.emptySubtitle}>
-                  Ask me anything about your health, medications, or appointments
+                  Ask me anything about your health, medications, or
+                  appointments
                 </Text>
               </View>
             ) : (
@@ -188,7 +194,9 @@ export default function ChatBot() {
                   <View
                     style={[
                       styles.message,
-                      item.sender === "user" ? styles.userMsg : styles.assistantMsg,
+                      item.sender === "user"
+                        ? styles.userMsg
+                        : styles.assistantMsg,
                     ]}
                   >
                     <Text style={styles.messageText}>{item.text}</Text>
@@ -198,7 +206,7 @@ export default function ChatBot() {
             )}
 
             {/* Loading indicator */}
-            {status === 'loading' && (
+            {status === "loading" && (
               <View style={styles.loadingContainer}>
                 <ActivityIndicator size="small" color="#4F8EF7" />
                 <Text style={styles.loadingText}>Thinking...</Text>
@@ -238,12 +246,16 @@ export default function ChatBot() {
                 }
               />
               <TouchableOpacity
-                style={[styles.sendBtn, (!draft.trim() || status === 'loading') && styles.sendBtnDisabled]}
+                style={[
+                  styles.sendBtn,
+                  (!draft.trim() || status === "loading") &&
+                    styles.sendBtnDisabled,
+                ]}
                 onPress={onSend}
                 activeOpacity={0.7}
-                disabled={!draft.trim() || status === 'loading'}
+                disabled={!draft.trim() || status === "loading"}
               >
-                {status === 'loading' ? (
+                {status === "loading" ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Feather name="send" size={18} color="#fff" />

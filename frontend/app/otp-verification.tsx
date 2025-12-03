@@ -16,6 +16,7 @@ import {
   configure2FAAsync,
   loginAsync,
   selectAuthStatus,
+  fetchUserRolesAsync,
 } from "@/features/auth/authSlice";
 import { useTempCredentials } from "@/contexts/TempCredentialsContext";
 
@@ -104,6 +105,8 @@ export default function OtpVerification() {
 
         if (verifyOtpAsync.fulfilled.match(resultAction)) {
           console.log("OTP verification successful");
+          // Fetch user roles after successful OTP verification
+          await dispatch(fetchUserRolesAsync());
           // Clear temporary credentials from context
           clearCredentials();
           router.replace("/(tabs)");

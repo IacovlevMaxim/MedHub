@@ -1,7 +1,8 @@
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
-import * as Localization from 'expo-localization';
+import { Platform } from 'react-native';
 import { storage } from '../../utils/storage';
+import { getMobileLanguage } from '../../utils/mobileLocalization';
 
 const backendApi = process.env.EXPO_PUBLIC_API_URL;
 
@@ -33,8 +34,17 @@ const generateUUID = (): string => {
 // Get user's system language or fallback to Romanian
 const getUserLanguage = (): string => {
   try {
-    const locale = Localization.getLocales()[0]?.languageCode;
-    return locale || 'ro';
+    if (Platform.OS === 'web') {
+      // Web: use browser's navigator.language
+      if (typeof navigator !== 'undefined' && navigator.language) {
+        const browserLang = navigator.language.split('-')[0];
+        return browserLang || 'ro';
+      }
+      return 'ro';
+    } else {
+      // Mobile: use platform-specific localization
+      return getMobileLanguage();
+    }
   } catch {
     return 'ro';
   }
@@ -44,7 +54,7 @@ const initialState: ChatbotState = {
   messages: [],
   sessionId: generateUUID(),
   userId: generateUUID(),
-  language: getUserLanguage(),
+  language: getUserLanguage(), // Set language on initialization
   status: 'idle',
   error: null,
 };
