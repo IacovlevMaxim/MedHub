@@ -1,6 +1,7 @@
 import {createAsyncThunk, createSlice, PayloadAction} from '@reduxjs/toolkit';
 import {RootState} from '../../app/store';
 import {storage} from '../../utils/storage';
+import {jwtDecode} from 'jwt-decode';
 
 const backendApi = process.env.EXPO_PUBLIC_API_URL;
 
@@ -9,6 +10,7 @@ interface AuthState {
   accessTokenExpiresAt: string | null;
   refreshToken: string | null;
   refreshTokenExpiresAt: string | null;
+  userId: string | null;
   isAuthenticated: boolean;
   status: 'idle' | 'loading' | 'failed';
   error: string | null;
@@ -19,9 +21,23 @@ const initialState: AuthState = {
   accessTokenExpiresAt: null,
   refreshToken: null,
   refreshTokenExpiresAt: null,
+  userId: null,
   isAuthenticated: false,
   status: 'idle',
   error: null,
+};
+
+// Helper function to decode JWT and extract userId
+const decodeJwtUserId = (token: string): string | null => {
+  try {
+    const payload = jwtDecode<{
+      'http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier': string;
+    }>(token);
+    return payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || null;
+  } catch (error) {
+    console.error('Failed to decode JWT:', error);
+    return null;
+  }
 };
 
 // Async thunk for forgot password
@@ -242,6 +258,7 @@ export const authSlice = createSlice({
     setAccessToken: (state, action: PayloadAction<{token: string; expiresAt: string}>) => {
       state.accessToken = action.payload.token;
       state.accessTokenExpiresAt = action.payload.expiresAt;
+      state.userId = decodeJwtUserId(action.payload.token);
       state.isAuthenticated = true;
     },
     setRefreshToken: (state, action: PayloadAction<{token: string; expiresAt: string}>) => {
@@ -258,6 +275,7 @@ export const authSlice = createSlice({
       state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
       state.refreshToken = action.payload.refreshToken;
       state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
+      state.userId = decodeJwtUserId(action.payload.accessToken);
       state.isAuthenticated = true;
     },
     clearTokens: (state) => {
@@ -265,6 +283,7 @@ export const authSlice = createSlice({
       state.accessTokenExpiresAt = null;
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
+      state.userId = null;
       state.isAuthenticated = false;
       storage.deleteItem('accessToken');
       storage.deleteItem('refreshToken');
@@ -275,6 +294,7 @@ export const authSlice = createSlice({
       state.accessTokenExpiresAt = null;
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
+      state.userId = null;
       state.isAuthenticated = false;
       state.error = null;
     },
@@ -330,6 +350,7 @@ export const authSlice = createSlice({
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
         state.refreshToken = action.payload.refreshToken;
         state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
+        state.userId = decodeJwtUserId(action.payload.accessToken);
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -346,6 +367,7 @@ export const authSlice = createSlice({
         state.status = 'idle';
         state.accessToken = action.payload.accessToken;
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
+        state.userId = decodeJwtUserId(action.payload.accessToken);
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -366,6 +388,7 @@ export const authSlice = createSlice({
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt;
         state.refreshToken = action.payload.refreshToken;
         state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt;
+        state.userId = decodeJwtUserId(action.payload.accessToken);
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -377,6 +400,7 @@ export const authSlice = createSlice({
       .addCase(initializeAuthAsync.fulfilled, (state, action) => {
         state.accessToken = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
+        state.userId = decodeJwtUserId(action.payload.accessToken);
         state.isAuthenticated = true;
       })
       .addCase(initializeAuthAsync.rejected, (state) => {
@@ -398,6 +422,7 @@ export const {
 // Selectors
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
+export const selectUserId = (state: RootState) => state.auth.userId;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectAccessTokenExpiresAt = (state: RootState) => state.auth.accessTokenExpiresAt;
 export const selectRefreshTokenExpiresAt = (state: RootState) => state.auth.refreshTokenExpiresAt;
