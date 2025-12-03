@@ -17,7 +17,7 @@ import {
   selectAuthStatus,
   selectIs2FAEnabled,
 } from "@/features/auth/authSlice";
-import { router } from "expo-router";
+import { Href, router } from "expo-router";
 
 export default function ProfileView() {
   const dispatch = useAppDispatch();
@@ -251,7 +251,7 @@ export default function ProfileView() {
 
         <TouchableOpacity 
           style={styles.actionButton}
-          onPress={() => router.push("/change-password")}
+          onPress={() => router.push("/change-password" as Href)}
         >
           <Feather
             name="lock"
