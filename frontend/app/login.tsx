@@ -6,6 +6,7 @@ import {
   setAuthenticated,
   initializeAuthAsync,
 } from "@/features/auth/authSlice";
+import * as SecureStore from "expo-secure-store";
 
 import useInputField from "@/hooks/useInputField";
 import { Link, useRouter } from "expo-router";
@@ -101,13 +102,21 @@ export default function Login() {
           // Check if OTP is required (206 response)
           if (resultAction.payload.requiresOtp) {
             console.log("OTP required, navigating to OTP verification");
-            router.push({
-              pathname: "/otp-verification" as any,
-              params: {
-                identifier: emailField.value,
-                password: passwordField.value,
-              },
-            });
+            // Store credentials securely for OTP verification
+            if (Platform.OS === "web") {
+              sessionStorage.setItem("tempIdentifier", emailField.value);
+              sessionStorage.setItem("tempPassword", passwordField.value);
+            } else {
+              await SecureStore.setItemAsync(
+                "tempIdentifier",
+                emailField.value
+              );
+              await SecureStore.setItemAsync(
+                "tempPassword",
+                passwordField.value
+              );
+            }
+            router.push("/otp-verification");
           } else {
             // Direct login successful (200 response)
             console.log("Login successful");
@@ -194,23 +203,6 @@ export default function Login() {
                   <Text style={styles.ghostButtonText}>Forgot Password?</Text>
                 </TouchableOpacity>
               </Link>
-              {/* TEMPORARY: Test OTP flow */}
-              <TouchableOpacity
-                style={[styles.ghostButton, { marginTop: 8 }]}
-                onPress={() =>
-                  router.push({
-                    pathname: "/otp-verification" as any,
-                    params: {
-                      identifier: "test@example.com",
-                      password: "testpassword",
-                    },
-                  })
-                }
-              >
-                <Text style={[styles.ghostButtonText, { color: "#FF6B6B" }]}>
-                  🧪 Test OTP Page
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
 

@@ -25,9 +25,6 @@ export default function ProfileView() {
   const is2FAEnabled = useAppSelector(selectIs2FAEnabled);
   const [isLoading2FA, setIsLoading2FA] = useState(false);
 
-  // Don't load 2FA status on mount since endpoint doesn't exist
-  // User will see it as disabled by default
-
   const handle2FAToggle = async (value: boolean) => {
     if (isLoading2FA) return;
 
@@ -43,8 +40,6 @@ export default function ProfileView() {
           router.push({
             pathname: "/otp-verification" as any,
             params: {
-              identifier: "2fa-setup",
-              password: "2fa-setup",
               is2FASetup: "true",
               enable: value ? "true" : "false",
             },

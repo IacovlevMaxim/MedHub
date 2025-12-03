@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,8 +14,10 @@ import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import {
   verifyOtpAsync,
   configure2FAAsync,
+  loginAsync,
   selectAuthStatus,
 } from "@/features/auth/authSlice";
+import * as SecureStore from "expo-secure-store";
 
 export default function OtpVerification() {
   const dispatch = useAppDispatch();
@@ -23,18 +25,43 @@ export default function OtpVerification() {
   const params = useLocalSearchParams();
   const status = useAppSelector(selectAuthStatus);
 
-  // Get credentials passed from login page or 2FA setup flag
-  const { identifier, password, is2FASetup, enable } = params as {
-    identifier: string;
-    password: string;
+  // Get 2FA setup flag from params (this is safe)
+  const { is2FASetup, enable } = params as {
     is2FASetup?: string;
     enable?: string;
   };
 
   const is2FASetupMode = is2FASetup === "true";
+  const [identifier, setIdentifier] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [error, setError] = useState("");
   const inputRefs = useRef<Array<TextInput | null>>([]);
+
+  // Load credentials from secure storage on mount
+  useEffect(() => {
+    const loadCredentials = async () => {
+      if (!is2FASetupMode) {
+        // Only load credentials for login OTP, not 2FA setup
+        if (Platform.OS === "web") {
+          const tempId = sessionStorage.getItem("tempIdentifier");
+          const tempPass = sessionStorage.getItem("tempPassword");
+          if (tempId && tempPass) {
+            setIdentifier(tempId);
+            setPassword(tempPass);
+          }
+        } else {
+          const tempId = await SecureStore.getItemAsync("tempIdentifier");
+          const tempPass = await SecureStore.getItemAsync("tempPassword");
+          if (tempId && tempPass) {
+            setIdentifier(tempId);
+            setPassword(tempPass);
+          }
+        }
+      }
+    };
+    loadCredentials();
+  }, [is2FASetupMode]);
 
   const handleOtpChange = (value: string, index: number) => {
     // Only allow digits
@@ -103,6 +130,14 @@ export default function OtpVerification() {
 
         if (verifyOtpAsync.fulfilled.match(resultAction)) {
           console.log("OTP verification successful");
+          // Clear temporary credentials from storage
+          if (Platform.OS === "web") {
+            sessionStorage.removeItem("tempIdentifier");
+            sessionStorage.removeItem("tempPassword");
+          } else {
+            await SecureStore.deleteItemAsync("tempIdentifier");
+            await SecureStore.deleteItemAsync("tempPassword");
+          }
           router.replace("/(tabs)");
         } else {
           setError("Invalid OTP code. Please try again.");
@@ -113,13 +148,34 @@ export default function OtpVerification() {
     }
   };
 
-  const handleResend = () => {
-    // TODO: Implement resend OTP logic if backend supports it
+  const handleResend = async () => {
     setOtp(["", "", "", "", "", ""]);
     setError("");
-    const firstInput = inputRefs.current[0];
-    if (firstInput) {
-      firstInput.focus();
+
+    try {
+      if (is2FASetupMode) {
+        // Resend 2FA setup code by calling configure2FA without OTP
+        await dispatch(
+          configure2FAAsync({
+            enable: enable === "true",
+          })
+        );
+      } else {
+        // Resend login OTP by calling login again without OTP
+        await dispatch(
+          loginAsync({
+            identifier,
+            password,
+          })
+        );
+      }
+      // Focus first input after resending
+      const firstInput = inputRefs.current[0];
+      if (firstInput) {
+        firstInput.focus();
+      }
+    } catch (error) {
+      setError("Failed to resend code. Please try again.");
     }
   };
 
@@ -185,13 +241,6 @@ export default function OtpVerification() {
             <Text style={styles.resendButtonText}>
               Didn't receive code? Resend
             </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <Text style={styles.backButtonText}>Back to Login</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

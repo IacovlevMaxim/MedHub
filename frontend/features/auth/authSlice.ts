@@ -306,13 +306,15 @@ export const configure2FAAsync = createAsyncThunk<
   }
 
   if (!response.ok) {
+    const text = await response.text();
+    let errorMessage = '2FA configuration failed';
     try {
-      const data = await response.json();
-      return thunkAPI.rejectWithValue(data.message || data.error || '2FA configuration failed');
+      const data = JSON.parse(text);
+      errorMessage = data.message || data.error || errorMessage;
     } catch {
-      const text = await response.text();
-      return thunkAPI.rejectWithValue(text || '2FA configuration failed');
+      errorMessage = text || errorMessage;
     }
+    return thunkAPI.rejectWithValue(errorMessage);
   }
 
   const data = await response.json();
@@ -407,6 +409,10 @@ export const authSlice = createSlice({
       state.isAuthenticated = false;
       state.is2FAEnabled = false;
       state.error = null;
+      // Clear 2FA status from storage
+      storage.deleteItem('is2FAEnabled').catch(err => 
+        console.error('Failed to clear 2FA status:', err)
+      );
     },
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
@@ -534,7 +540,10 @@ export const authSlice = createSlice({
         // Update 2FA status when successfully configured (not when OTP is required)
         if (action.payload.enabled !== undefined) {
           state.is2FAEnabled = action.payload.enabled;
-          storage.setItem('is2FAEnabled', action.payload.enabled.toString());
+          // Persist to storage without awaiting (fire and forget)
+          storage.setItem('is2FAEnabled', action.payload.enabled.toString()).catch(err => 
+            console.error('Failed to save 2FA status:', err)
+          );
         }
       })
       .addCase(configure2FAAsync.rejected, (state, action) => {
