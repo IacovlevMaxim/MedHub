@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,26 +11,36 @@ import {
   PanResponder,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
-
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-};
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import {
+  sendChatMessageAsync,
+  addUserMessage,
+  selectMessages,
+  selectChatbotStatus,
+  selectChatbotError,
+  clearMessages,
+  clearError,
+} from "@/features/chatbot/chatbotSlice";
 
 export default function ChatBot() {
+  const dispatch = useAppDispatch();
+  const messages = useAppSelector(selectMessages);
+  const status = useAppSelector(selectChatbotStatus);
+  const error = useAppSelector(selectChatbotError);
+  
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "m1",
-      role: "assistant",
-      content: "Hi, I'm MedBot. How can I help you today?",
-    },
-  ]);
   const [draft, setDraft] = useState("");
   const [inputHeight, setInputHeight] = useState(40);
+
+  // Add initial greeting message
+  useEffect(() => {
+    if (messages.length === 0) {
+      // You could add a welcome message here if needed
+    }
+  }, []);
 
   const historyItems = useMemo(
     () => [
@@ -111,26 +121,27 @@ export default function ChatBot() {
     })
   ).current;
 
-  const onSend = () => {
-    if (!draft.trim()) return;
-    const newUserMsg: Message = {
-      id: `u-${Date.now()}`,
-      role: "user",
-      content: draft.trim(),
-    };
-    setMessages((prev) => [...prev, newUserMsg]);
+  const onSend = async () => {
+    if (!draft.trim() || status === 'loading') return;
+    
+    const messageText = draft.trim();
     setDraft("");
-    // Placeholder assistant echo for UI demo
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `a-${Date.now()}`,
-          role: "assistant",
-          content: "Thanks! I'll get back to you shortly.",
-        },
-      ]);
-    }, 400);
+    setInputHeight(40);
+    
+    // Add user message to state
+    dispatch(addUserMessage(messageText));
+    
+    // Send message to backend
+    try {
+      await dispatch(sendChatMessageAsync({ message: messageText })).unwrap();
+    } catch (err) {
+      console.error('Failed to send message:', err);
+    }
+  };
+
+  const handleNewChat = () => {
+    dispatch(clearMessages());
+    animateClose();
   };
 
   return (
@@ -160,21 +171,49 @@ export default function ChatBot() {
         <View style={styles.body} {...edgePan.panHandlers}>
           {/* Chat area */}
           <View style={styles.chatArea}>
-            <FlatList
-              contentContainerStyle={{ padding: 12 }}
-              data={messages}
-              keyExtractor={(m) => m.id}
-              renderItem={({ item }) => (
-                <View
-                  style={[
-                    styles.message,
-                    item.role === "user" ? styles.userMsg : styles.assistantMsg,
-                  ]}
-                >
-                  <Text style={styles.messageText}>{item.content}</Text>
-                </View>
-              )}
-            />
+            {messages.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Feather name="message-circle" size={64} color="#4F8EF7" style={{ opacity: 0.5 }} />
+                <Text style={styles.emptyTitle}>Welcome to MedBot</Text>
+                <Text style={styles.emptySubtitle}>
+                  Ask me anything about your health, medications, or appointments
+                </Text>
+              </View>
+            ) : (
+              <FlatList
+                contentContainerStyle={{ padding: 12 }}
+                data={messages}
+                keyExtractor={(m) => m.id}
+                renderItem={({ item }) => (
+                  <View
+                    style={[
+                      styles.message,
+                      item.sender === "user" ? styles.userMsg : styles.assistantMsg,
+                    ]}
+                  >
+                    <Text style={styles.messageText}>{item.text}</Text>
+                  </View>
+                )}
+              />
+            )}
+
+            {/* Loading indicator */}
+            {status === 'loading' && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color="#4F8EF7" />
+                <Text style={styles.loadingText}>Thinking...</Text>
+              </View>
+            )}
+
+            {/* Error message */}
+            {error && (
+              <View style={styles.errorContainer}>
+                <Text style={styles.errorText}>{error}</Text>
+                <TouchableOpacity onPress={() => dispatch(clearError())}>
+                  <Feather name="x" size={16} color="#FF6B6B" />
+                </TouchableOpacity>
+              </View>
+            )}
 
             {/* Input bar */}
             <View style={styles.inputBar}>
@@ -199,11 +238,16 @@ export default function ChatBot() {
                 }
               />
               <TouchableOpacity
-                style={styles.sendBtn}
+                style={[styles.sendBtn, (!draft.trim() || status === 'loading') && styles.sendBtnDisabled]}
                 onPress={onSend}
                 activeOpacity={0.7}
+                disabled={!draft.trim() || status === 'loading'}
               >
-                <Feather name="send" size={18} color="#fff" />
+                {status === 'loading' ? (
+                  <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                  <Feather name="send" size={18} color="#fff" />
+                )}
               </TouchableOpacity>
             </View>
           </View>
@@ -229,7 +273,7 @@ export default function ChatBot() {
           >
             <View style={styles.sidebarHeader}>
               <Text style={styles.sidebarTitle}>History</Text>
-              <TouchableOpacity activeOpacity={0.7}>
+              <TouchableOpacity activeOpacity={0.7} onPress={handleNewChat}>
                 <Feather name="plus" size={18} color="#4F8EF7" />
               </TouchableOpacity>
             </View>
@@ -343,6 +387,57 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
+  },
+  sendBtnDisabled: {
+    backgroundColor: "#B8C5D6",
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 40,
+  },
+  emptyTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#222",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  emptySubtitle: {
+    fontSize: 15,
+    color: "#888",
+    marginTop: 8,
+    textAlign: "center",
+  },
+  loadingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 12,
+    gap: 8,
+  },
+  loadingText: {
+    color: "#888",
+    fontSize: 14,
+  },
+  errorContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#FFE5E5",
+    padding: 12,
+    marginHorizontal: 12,
+    marginBottom: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FF6B6B",
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontSize: 14,
+    flex: 1,
+    marginRight: 8,
   },
   // Overlay styles for mobile history (full height)
   backdrop: {
