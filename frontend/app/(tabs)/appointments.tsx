@@ -22,6 +22,7 @@ import {
   AppointmentStatus,
   Appointment,
 } from "@/features/appointments/appointmentSlice";
+import { selectUserId } from "@/features/auth/authSlice";
 // import { AuthGuard } from "@/hooks/useAuth";
 
 export default function AppointmentsView() {
@@ -30,17 +31,16 @@ export default function AppointmentsView() {
   const dispatch = useAppDispatch();
   const status = useAppSelector(selectAppointmentsStatus);
   const error = useAppSelector(selectAppointmentsError);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const userId = useAppSelector(selectUserId);
 
   useEffect(() => {
-    // For now, just fetch all appointments since we don't have the user ID selector
-    dispatch(fetchAppointments());
-
-    // When user ID is available:
-    // if (currentUserId) {
-    //   dispatch(fetchUserAppointments(currentUserId));
-    // }
-  }, [dispatch]);
+    if (userId) {
+      dispatch(fetchUserAppointments(userId));
+    } else {
+      // Fallback to fetching all appointments if userId is not available
+      // dispatch(fetchAppointments());
+    }
+  }, [dispatch, userId]);
 
   // Function to format date and time from appointment data
   const formatDateTime = (dateTimeString: string) => {
@@ -148,7 +148,7 @@ export default function AppointmentsView() {
           </Text>
           <TouchableOpacity
             style={styles.retryButton}
-            onPress={() => dispatch(fetchAppointments())}
+            onPress={() => userId ? dispatch(fetchUserAppointments(userId)) : dispatch(fetchAppointments())}
           >
             <Text style={styles.retryButtonText}>Retry</Text>
           </TouchableOpacity>

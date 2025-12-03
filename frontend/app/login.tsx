@@ -20,7 +20,7 @@ import {
   ScrollView,
 } from "react-native";
 import React from "react";
-// import Svg, { Path } from 'react-native-svg';
+import Logo from "@/assets/images/logo.svg";
 
 // Accept either a valid email OR a username (non-empty, min 3 chars)
 const identifierValidation = (value: string) => {
@@ -138,7 +138,7 @@ export default function Login() {
         <View style={styles.inner}>
           <View style={styles.logoBox}>
             <View style={styles.logoCircle}>
-              <Text style={styles.logoIcon}>🏥</Text>
+              <Logo width={48} height={48} />
             </View>
             <Text style={styles.title}>MedHub</Text>
             <Text style={styles.subtitle}>

@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "StickerSmash",
-    "slug": "StickerSmash",
+    "name": "MedHub",
+    "slug": "medhub",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "stickersmash",
+    "scheme": "medhub",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.StickerSmash"
+      "bundleIdentifier": "com.anonymous.medhub"
     },
     "android": {
       "adaptiveIcon": {
