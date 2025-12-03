@@ -20,12 +20,9 @@ import {
   ScrollView,
 } from "react-native";
 import React from "react";
-<<<<<<< HEAD
 import { identifierValidation, passwordValidation } from "@/utils/loginValidation";
 // import Svg, { Path } from 'react-native-svg';
-=======
 import Logo from "@/assets/images/logo.svg";
->>>>>>> 7f8e54a87d2850ff55a3e0e3829018384b3d9669
 
 export default function Login() {
   const dispatch = useAppDispatch();
