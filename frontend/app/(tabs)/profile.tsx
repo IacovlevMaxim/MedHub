@@ -249,32 +249,17 @@ export default function ProfileView() {
           />
         </View>
 
-        <TouchableOpacity style={styles.actionButton}>
+        <TouchableOpacity 
+          style={styles.actionButton}
+          onPress={() => router.push("/change-password")}
+        >
           <Feather
-            name="bell"
+            name="lock"
             size={20}
             color="#4F8EF7"
             style={{ marginRight: 12 }}
           />
-          <Text style={styles.actionText}>Notification Settings</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Feather
-            name="shield"
-            size={20}
-            color="#4F8EF7"
-            style={{ marginRight: 12 }}
-          />
-          <Text style={styles.actionText}>Privacy & Security</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton}>
-          <Feather
-            name="settings"
-            size={20}
-            color="#4F8EF7"
-            style={{ marginRight: 12 }}
-          />
-          <Text style={styles.actionText}>App Settings</Text>
+          <Text style={styles.actionText}>Change Password</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionButton, { borderColor: "#E53935" }]}
@@ -297,7 +282,7 @@ export default function ProfileView() {
 
       {/* App Info */}
       <View style={[styles.section, styles.appInfoCard]}>
-        <Text style={styles.appInfoTitle}>MediCare Mobile</Text>
+        <Text style={styles.appInfoTitle}>MedHub</Text>
         <Text style={styles.appInfoVersion}>Version 1.0.0</Text>
         <Text style={styles.appInfoDesc}>
           Your personal medical cabinet for managing appointments, results, and

@@ -103,6 +103,8 @@ export default function RootLayout() {
                 <Stack.Screen name="reset-password" />
                 <Stack.Screen name="confirm-email" />
                 <Stack.Screen name="book-appointment" />
+                <Stack.Screen name="otp-verification" />
+                <Stack.Screen name="change-password" />
               </Stack>
             )}
           </View>
