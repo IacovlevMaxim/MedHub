@@ -20,8 +20,12 @@ import {
   ScrollView,
 } from "react-native";
 import React from "react";
+<<<<<<< HEAD
 import { identifierValidation, passwordValidation } from "@/utils/loginValidation";
 // import Svg, { Path } from 'react-native-svg';
+=======
+import Logo from "@/assets/images/logo.svg";
+>>>>>>> 7f8e54a87d2850ff55a3e0e3829018384b3d9669
 
 export default function Login() {
   const dispatch = useAppDispatch();
@@ -119,7 +123,7 @@ export default function Login() {
         <View style={styles.inner}>
           <View style={styles.logoBox}>
             <View style={styles.logoCircle}>
-              <Text style={styles.logoIcon}>🏥</Text>
+              <Logo width={48} height={48} />
             </View>
             <Text style={styles.title}>MedHub</Text>
             <Text style={styles.subtitle}>

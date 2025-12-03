@@ -6,13 +6,16 @@ import {
   ScrollView,
   TouchableOpacity,
   Platform,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import Feather from "react-native-vector-icons/Feather";
 import InputField from "@/components/InputField";
 import useInputField from "@/hooks/useInputField";
 import RNDateTimePicker from "@react-native-community/datetimepicker";
-import { useAppointments, AppointmentStatus } from "@/contexts/AppointmentsContext";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { createAppointment, CreateAppointmentRequest } from "@/features/appointments/appointmentSlice";
+import { selectUserId } from "@/features/auth/authSlice";
 
 const specialties = [
   "Cardiology",
@@ -37,10 +40,12 @@ const timeSlots = [
 
 export default function BookAppointment() {
   const router = useRouter();
-  const { addAppointment } = useAppointments();
+  const dispatch = useAppDispatch();
+  const userId = useAppSelector(selectUserId);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedSpecialty, setSelectedSpecialty] = useState("");
   const [selectedTimeSlot, setSelectedTimeSlot] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const reasonField = useInputField({
     label: "Reason for Visit",
@@ -54,35 +59,59 @@ export default function BookAppointment() {
     value: "",
   });
 
-  const handleBookAppointment = () => {
-    // Combine date and time into ISO datetime string
-    const [hours, minutes] = selectedTimeSlot
-      .replace(/AM|PM/, "")
-      .trim()
-      .split(":")
-      .map(Number);
-    const isPM = selectedTimeSlot.includes("PM");
-    const adjustedHours = isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
+  const handleBookAppointment = async () => {
+    if (!userId) {
+      Alert.alert("Error", "You must be logged in to book an appointment");
+      return;
+    }
 
-    const appointmentDate = new Date(selectedDate);
-    appointmentDate.setHours(adjustedHours, minutes, 0, 0);
+    setIsSubmitting(true);
 
-    // Add the new appointment to the context
-    addAppointment({
-      patientId: "user123", // Will be replaced with actual user ID from auth
-      doctorId: "tbd",
-      doctorName: "TBD - To be assigned",
-      appointmentDateTime: appointmentDate.toISOString(),
-      title: `${selectedSpecialty} - ${reasonField.value}`,
-      description: notesField.value || undefined,
-      status: AppointmentStatus.Pending,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    });
+    try {
+      // Combine date and time into ISO datetime string
+      const [hours, minutes] = selectedTimeSlot
+        .replace(/AM|PM/, "")
+        .trim()
+        .split(":")
+        .map(Number);
+      const isPM = selectedTimeSlot.includes("PM");
+      const adjustedHours = isPM && hours !== 12 ? hours + 12 : hours === 12 && !isPM ? 0 : hours;
 
-    console.log("Appointment booked successfully!");
-    // Navigate back to appointments
-    router.back();
+      const appointmentDate = new Date(selectedDate);
+      appointmentDate.setHours(adjustedHours, minutes, 0, 0);
+
+      // Create appointment request
+      const appointmentRequest: CreateAppointmentRequest = {
+        userId: userId,
+        doctorName: "TBD - To be assigned",
+        appointmentDateTime: appointmentDate.toISOString(),
+        title: `${selectedSpecialty} - ${reasonField.value}`,
+        description: notesField.value || "",
+      };
+
+      console.log('sending request');
+
+      // Dispatch create appointment action
+      const result = await dispatch(createAppointment(appointmentRequest)).unwrap();
+
+      Alert.alert(
+        "Success",
+        "Appointment booked successfully!",
+        [
+          {
+            text: "OK",
+            onPress: () => router.back(),
+          },
+        ]
+      );
+    } catch (error) {
+      Alert.alert(
+        "Error",
+        `Failed to book appointment: ${error}`
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -208,16 +237,18 @@ export default function BookAppointment() {
         <TouchableOpacity
           style={[
             styles.bookButton,
-            (!selectedSpecialty || !selectedTimeSlot || !reasonField.value) &&
+            (!selectedSpecialty || !selectedTimeSlot || !reasonField.value || isSubmitting) &&
               styles.bookButtonDisabled,
           ]}
           onPress={handleBookAppointment}
           disabled={
-            !selectedSpecialty || !selectedTimeSlot || !reasonField.value
+            !selectedSpecialty || !selectedTimeSlot || !reasonField.value || isSubmitting
           }
         >
           <Feather name="calendar" size={20} color="#fff" />
-          <Text style={styles.bookButtonText}>Confirm Booking</Text>
+          <Text style={styles.bookButtonText}>
+            {isSubmitting ? "Booking..." : "Confirm Booking"}
+          </Text>
         </TouchableOpacity>
 
         {/* Summary Card */}
