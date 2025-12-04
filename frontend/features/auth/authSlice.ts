@@ -348,8 +348,6 @@ export const fetchUserRolesAsync = createAsyncThunk<
   const state = thunkAPI.getState();
   const accessToken = state.auth.accessToken;
 
-  console.log("fetching user with token", accessToken);
-
   const response = await fetch(`${backendApi}/api/User/${userId}`, {
     method: 'GET',
     headers: {
