@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { useAppDispatch } from "@/hooks/useRedux";
 
 import { useAppSelector } from "@/hooks/useRedux";
-import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated, selectUserRoles } from "@/features/auth/authSlice";
+import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated, selectUserRoles, fetchUserRolesAsync, selectUserId } from "@/features/auth/authSlice";
 import { BottomNavigation } from "../navigation-bar";
 import { TabsContext } from "./tabContext";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -96,6 +96,7 @@ export default function TabLayout() {
   const router = useRouter();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const userRoles = useAppSelector(selectUserRoles);
+  const userId = useAppSelector(selectUserId);
 
   // Get first accessible tab for the user
   const getDefaultTab = () => {
@@ -124,6 +125,26 @@ export default function TabLayout() {
 
     checkStoredTokens();
   }, [dispatch, router]);
+
+  // Fetch user roles and redirect to login on failure
+  useEffect(() => {
+    const fetchRoles = async () => {
+      if (isAuthenticated && userId && userRoles.length === 0) {
+        try {
+          const resultAction = await dispatch(fetchUserRolesAsync(userId));
+          if (fetchUserRolesAsync.rejected.match(resultAction)) {
+            console.log("Failed to fetch user roles, redirecting to login");
+            router.replace("/login");
+          }
+        } catch (error) {
+          console.log("Error fetching user roles, redirecting to login");
+          router.replace("/login");
+        }
+      }
+    };
+
+    fetchRoles();
+  }, [isAuthenticated, userId, userRoles.length, dispatch, router]);
 
   // Set default tab based on user role when roles are loaded
   useEffect(() => {

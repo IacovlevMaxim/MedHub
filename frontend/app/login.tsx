@@ -5,6 +5,7 @@ import {
   selectAuthStatus,
   setAuthenticated,
   initializeAuthAsync,
+  refreshAccessTokenAsync,
 } from "@/features/auth/authSlice";
 import { useTempCredentials } from "@/contexts/TempCredentialsContext";
 
@@ -47,10 +48,12 @@ export default function Login() {
     const checkStoredTokens = async () => {
       try {
         const resultAction = await dispatch(initializeAuthAsync());
-        if (initializeAuthAsync.fulfilled.match(resultAction)) {
-          console.log("Tokens found, user is logged in");
-          router.replace("/(tabs)");
-        }
+        if (initializeAuthAsync.rejected.match(resultAction)) return;
+
+        const resultRefresh = await dispatch(refreshAccessTokenAsync());
+        if (refreshAccessTokenAsync.rejected.match(resultRefresh)) return;
+
+        router.replace('/(tabs)');
       } catch (error) {
         console.log("No tokens found, user needs to log in");
       }
