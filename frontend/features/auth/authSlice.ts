@@ -11,6 +11,7 @@ interface AuthState {
   refreshToken: string | null;
   refreshTokenExpiresAt: string | null;
   userId: string | null;
+  roles: string[];
   isAuthenticated: boolean;
   is2FAEnabled: boolean;
   status: 'idle' | 'loading' | 'failed';
@@ -23,6 +24,7 @@ const initialState: AuthState = {
   refreshToken: null,
   refreshTokenExpiresAt: null,
   userId: null,
+  roles: [],
   isAuthenticated: false,
   is2FAEnabled: false,
   status: 'idle',
@@ -337,12 +339,45 @@ export const get2FAStatusAsync = createAsyncThunk<
   return {enabled: data.enabled || false};
 });
 
+// Async thunk to fetch user roles
+export const fetchUserRolesAsync = createAsyncThunk<
+  {roles: string[]},
+  string,
+  {state: RootState; rejectValue: string}
+>('auth/fetchUserRoles', async (userId, thunkAPI) => {
+  const state = thunkAPI.getState();
+  const accessToken = state.auth.accessToken;
+
+  console.log("fetching user with token", accessToken);
+
+  const response = await fetch(`${backendApi}/api/User/${userId}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    try {
+      const data = await response.json();
+      return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to fetch user roles');
+    } catch {
+      const text = await response.text();
+      return thunkAPI.rejectWithValue(text || 'Failed to fetch user roles');
+    }
+  }
+
+  const data = await response.json();
+  return { roles: data.roles || [] };
+});
+
 // Add a thunk to read tokens from SecureStore
 export const initializeAuthAsync = createAsyncThunk<
   {accessToken: string; refreshToken: string; is2FAEnabled: boolean},
   void,
   {state: RootState}
->('auth/initializeAuth', async () => {
+>('auth/initializeAuth', async (_, thunkAPI) => {
   const accessToken = await storage.getItem('accessToken');
   const refreshToken = await storage.getItem('refreshToken');
   const is2FAEnabledStr = await storage.getItem('is2FAEnabled');
@@ -390,6 +425,7 @@ export const authSlice = createSlice({
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.userId = null;
+      state.roles = [];
       state.isAuthenticated = false;
       storage.deleteItem('accessToken');
       storage.deleteItem('refreshToken');
@@ -401,6 +437,7 @@ export const authSlice = createSlice({
       state.refreshToken = null;
       state.refreshTokenExpiresAt = null;
       state.userId = null;
+      state.roles = [];
       state.isAuthenticated = false;
       state.is2FAEnabled = false;
       state.error = null;
@@ -501,9 +538,11 @@ export const authSlice = createSlice({
           return;
         }
         state.accessToken = action.payload.accessToken!;
+        console.log("setting access token to ", state.accessToken);
         state.accessTokenExpiresAt = action.payload.accessTokenExpiresAt!;
         state.refreshToken = action.payload.refreshToken!;
         state.refreshTokenExpiresAt = action.payload.refreshTokenExpiresAt!;
+        state.userId = decodeJwtUserId(action.payload.accessToken!);
         state.isAuthenticated = true;
         state.error = null;
       })
@@ -540,7 +579,7 @@ export const authSlice = createSlice({
           state.is2FAEnabled = action.payload.enabled;
           // Persist to storage without awaiting (fire and forget)
           storage.setItem('is2FAEnabled', action.payload.enabled.toString()).catch(err => 
-            console.error('Failed to save 2FA status:', err)
+            console.error('Failed to save 2FA sftatus:', err)
           );
         }
       })
@@ -560,6 +599,14 @@ export const authSlice = createSlice({
       })
       .addCase(initializeAuthAsync.rejected, (state) => {
         state.isAuthenticated = false;
+      })
+      .addCase(fetchUserRolesAsync.fulfilled, (state, action) => {
+        state.roles = action.payload.roles;
+      })
+      .addCase(fetchUserRolesAsync.rejected, (state, action) => {
+        console.error('Failed to fetch user roles:', action.payload);
+        state.isAuthenticated = false;
+        state.roles = [];
       });
   },
 });
@@ -578,6 +625,7 @@ export const {
 export const selectAccessToken = (state: RootState) => state.auth.accessToken;
 export const selectRefreshToken = (state: RootState) => state.auth.refreshToken;
 export const selectUserId = (state: RootState) => state.auth.userId;
+export const selectUserRoles = (state: RootState) => state.auth.roles;
 export const selectIsAuthenticated = (state: RootState) => state.auth.isAuthenticated;
 export const selectAccessTokenExpiresAt = (state: RootState) => state.auth.accessTokenExpiresAt;
 export const selectRefreshTokenExpiresAt = (state: RootState) => state.auth.refreshTokenExpiresAt;

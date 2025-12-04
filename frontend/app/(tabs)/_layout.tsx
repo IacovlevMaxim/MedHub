@@ -4,9 +4,10 @@ import { useRouter } from "expo-router";
 import { useAppDispatch } from "@/hooks/useRedux";
 
 import { useAppSelector } from "@/hooks/useRedux";
-import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated } from "@/features/auth/authSlice";
+import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated, selectUserRoles } from "@/features/auth/authSlice";
 import { BottomNavigation } from "../navigation-bar";
 import { TabsContext } from "./tabContext";
+import { RoleGuard } from "@/components/RoleGuard";
 
 // Import your tab screens
 import PatientDashboard from "./index";
@@ -26,21 +27,84 @@ const handleNotificationPress = () => {
   Alert.alert("Notifications", "Notification functionality coming soon!");
 };
 
-const tabComponents: Record<string, React.ReactNode> = {
-  dashboard: <PatientDashboard />,
-  history: <MedicalHistory />,
-  results: <LabResults />,
-  appointments: <Appointments />,
-  profile: <Profile />, // not shown in bottom nav but available for header navigation
-  chat: <ChatBot />,
-  faq: <FAQ />,
-};
+// Define tab configuration with roles
+interface TabConfig {
+  id: string;
+  component: React.ReactNode;
+  allowedRoles: string[];
+  label?: string; // Optional label for bottom navigation
+}
+
+const tabConfigs: TabConfig[] = [
+  // Common tabs
+  {
+    id: 'dashboard',
+    component: <PatientDashboard />,
+    allowedRoles: ['patient', 'doctor'],
+    label: 'Home',
+  },
+  // Patient-only tabs
+  {
+    id: 'results',
+    component: <LabResults />,
+    allowedRoles: ['patient'],
+    label: 'Results',
+  },
+  {
+    id: 'chat',
+    component: <ChatBot />,
+    allowedRoles: ['patient'],
+    label: 'Chatbot',
+  },
+  // Doctor-only tabs
+  {
+    id: 'history',
+    component: <MedicalHistory />,
+    allowedRoles: ['doctor'],
+    label: 'History',
+  },
+  {
+    id: 'appointments',
+    component: <Appointments />,
+    allowedRoles: ['doctor'],
+    label: 'Appointments',
+  },
+  // Additional tabs (not in bottom nav)
+  {
+    id: 'profile',
+    component: <Profile />,
+    allowedRoles: ['patient', 'doctor'],
+  },
+  {
+    id: 'faq',
+    component: <FAQ />,
+    allowedRoles: ['patient', 'doctor'],
+  },
+];
+
+const tabComponents: Record<string, { component: React.ReactNode; allowedRoles: string[] }> = {};
+tabConfigs.forEach(config => {
+  tabComponents[config.id] = {
+    component: config.component,
+    allowedRoles: config.allowedRoles,
+  };
+});
 
 export default function TabLayout() {
   const dispatch = useAppDispatch();
   const [activeTab, setActiveTab] = useState("dashboard");
   const router = useRouter();
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
+  const userRoles = useAppSelector(selectUserRoles);
+
+  // Get first accessible tab for the user
+  const getDefaultTab = () => {
+    const normalizedRoles = userRoles.map(r => r.toLowerCase());
+    const accessibleTab = tabConfigs.find(tab => 
+      tab.label && tab.allowedRoles.some(role => normalizedRoles.includes(role.toLowerCase()))
+    );
+    return accessibleTab?.id || 'dashboard';
+  };
 
   useEffect(() => {
     const checkStoredTokens = async () => {
@@ -59,7 +123,17 @@ export default function TabLayout() {
     };
 
     checkStoredTokens();
-  }, [dispatch, router, activeTab]);
+  }, [dispatch, router]);
+
+  // Set default tab based on user role when roles are loaded
+  useEffect(() => {
+    if (userRoles.length > 0 && activeTab === 'dashboard') {
+      const defaultTab = getDefaultTab();
+      if (defaultTab !== activeTab) {
+        setActiveTab(defaultTab);
+      }
+    }
+  }, [userRoles]);
 
   if(!isAuthenticated) {
       return (
@@ -69,10 +143,22 @@ export default function TabLayout() {
       );
   }
 
+  const currentTabConfig = tabComponents[activeTab];
+  
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>
       <View style={styles.container}>
-        <View style={styles.content}>{tabComponents[activeTab]}</View>
+        <View style={styles.content}>
+          {currentTabConfig ? (
+            <RoleGuard allowedRoles={currentTabConfig.allowedRoles}>
+              {currentTabConfig.component}
+            </RoleGuard>
+          ) : (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>Tab not found</Text>
+            </View>
+          )}
+        </View>
         <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
       </View>
     </TabsContext.Provider>
@@ -86,5 +172,15 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F6FA',
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#222',
   },
 });
