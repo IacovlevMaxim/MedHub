@@ -1,27 +1,47 @@
 import React from "react";
 import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
+import { useAppSelector } from "@/hooks/useRedux";
+import { selectUserRoles } from "@/features/auth/authSlice";
+
 interface BottomNavigationProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
 
-const tabs = [
-  { id: "dashboard", label: "Home", icon: "home" },
-  { id: "appointments", label: "Appointments", icon: "calendar" },
-  { id: "results", label: "Results", icon: "activity" },
-  { id: "history", label: "History", icon: "file-text" },
-  { id: "chat", label: "ChatBot", icon: "message-circle" },
+interface Tab {
+  id: string;
+  label: string;
+  icon: string;
+  allowedRoles: string[];
+}
+
+const tabs: Tab[] = [
+  // Patient tabs
+  { id: "dashboard", label: "Home", icon: "home", allowedRoles: ["patient", "doctor"] },
+  { id: "results", label: "Results", icon: "activity", allowedRoles: ["patient"] },
+  { id: "chat", label: "Chatbot", icon: "message-circle", allowedRoles: ["patient"] },
+  // Doctor tabs
+  { id: "history", label: "History", icon: "file-text", allowedRoles: ["doctor"] },
+  { id: "appointments", label: "Appointments", icon: "calendar", allowedRoles: ["doctor"] },
 ];
 
 export function BottomNavigation({
   activeTab,
   onTabChange,
 }: BottomNavigationProps) {
+  const userRoles = useAppSelector(selectUserRoles);
+  const normalizedRoles = userRoles.map(r => r.toLowerCase());
+
+  // Filter tabs based on user roles
+  const visibleTabs = tabs.filter(tab =>
+    tab.allowedRoles.some(role => normalizedRoles.includes(role.toLowerCase()))
+  );
+
   return (
     <View style={styles.navContainer}>
       <View style={styles.navRow}>
-        {tabs.map(({ id, label, icon }) => (
+        {visibleTabs.map(({ id, label, icon }) => (
           <TouchableOpacity
             key={id}
             onPress={() => onTabChange(id)}
