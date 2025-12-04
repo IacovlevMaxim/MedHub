@@ -2,7 +2,7 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../../app/store';
 
 // Define the API base URL using environment variable
-const backendApi = process.env.EXPO_PUBLIC_API_URL;
+const backendApi = process.env.EXPO_PUBLIC_API_URL || '';
 
 // Appointment Status enum matching the backend
 export enum AppointmentStatus {

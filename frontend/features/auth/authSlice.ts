@@ -3,7 +3,7 @@ import {RootState} from '../../app/store';
 import {storage} from '../../utils/storage';
 import {jwtDecode} from 'jwt-decode';
 
-const backendApi = process.env.EXPO_PUBLIC_API_URL;
+const backendApi = process.env.EXPO_PUBLIC_API_URL || '';
 
 interface AuthState {
   accessToken: string | null;
