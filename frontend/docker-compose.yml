@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    environment:
+      - NODE_ENV=production
+      - EXPO_PUBLIC_API_URL=
+    networks:
+      - medhub-network
+
+networks:
+  medhub-network:
+    external: true

@@ -3,7 +3,7 @@ import { RootState } from '../../app/store';
 import * as Localization from 'expo-localization';
 import { storage } from '../../utils/storage';
 
-const backendApi = process.env.EXPO_PUBLIC_API_URL;
+const backendApi = process.env.EXPO_PUBLIC_API_URL || '';
 
 interface Message {
   id: string;
