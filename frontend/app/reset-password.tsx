@@ -29,7 +29,7 @@ export default function Reset() {
   const error = useAppSelector(selectAuthError);
   const { email, token } = useLocalSearchParams<{ email: string; token: string }>();
   const [passwordMismatch, setPasswordMismatch] = useState(false);
-  const [success, setSuccess] = useState(true);
+  const [success, setSuccess] = useState(false);
   
   const passwordField = useInputField({
     label: "Password",
