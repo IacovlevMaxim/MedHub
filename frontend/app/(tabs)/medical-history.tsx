@@ -1,66 +1,21 @@
-import React from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
+import { useAppDispatch, useAppSelector } from "../../hooks/useRedux";
+import {
+  fetchMedicalHistory,
+  selectMedicalHistory,
+  selectMedicalHistoryStatus,
+} from "../../features/medical-history/medicalHistorySlice";
 
 export default function MedicalHistoryView() {
-  const medicalHistory = [
-    {
-      id: 1,
-      date: "2024-08-15",
-      doctor: "Dr. Sarah Johnson",
-      specialty: "Cardiology",
-      visitType: "Follow-up",
-      diagnosis: "Hypertension - Well Controlled",
-      summary: "Blood pressure stable on current medication. Continue monitoring.",
-      recommendations: [
-        "Continue current medication (Lisinopril 10mg daily)",
-        "Regular exercise 30 min/day",
-        "Low sodium diet",
-        "Follow-up in 3 months"
-      ],
-      prescriptions: [
-        { name: "Lisinopril", dosage: "10mg", frequency: "Daily", duration: "90 days" }
-      ]
-    },
-    {
-      id: 2,
-      date: "2024-07-22",
-      doctor: "Dr. Michael Chen",
-      specialty: "Dermatology",
-      visitType: "Consultation",
-      diagnosis: "Seborrheic Dermatitis",
-      summary: "Mild skin condition affecting scalp and face. Responding well to treatment.",
-      recommendations: [
-        "Use medicated shampoo 2-3 times per week",
-        "Apply topical cream as directed",
-        "Avoid harsh soaps and detergents",
-        "Return if symptoms worsen"
-      ],
-      prescriptions: [
-        { name: "Ketoconazole Shampoo", dosage: "2%", frequency: "2-3x weekly", duration: "30 days" },
-        { name: "Hydrocortisone Cream", dosage: "1%", frequency: "Twice daily", duration: "14 days" }
-      ]
-    },
-    {
-      id: 3,
-      date: "2024-06-10",
-      doctor: "Dr. Lisa Wang",
-      specialty: "Endocrinology",
-      visitType: "Annual Check-up",
-      diagnosis: "Type 2 Diabetes - Good Control",
-      summary: "HbA1c levels improved. Diabetes management is effective.",
-      recommendations: [
-        "Continue current diabetes medication",
-        "Monitor blood glucose daily",
-        "Maintain healthy diet and exercise",
-        "Annual eye exam scheduled"
-      ],
-      prescriptions: [
-        { name: "Metformin", dosage: "500mg", frequency: "Twice daily", duration: "90 days" },
-        { name: "Glucose test strips", dosage: "-", frequency: "As needed", duration: "30 days" }
-      ]
-    }
-  ];
+  const dispatch = useAppDispatch();
+  const medicalHistory = useAppSelector(selectMedicalHistory);
+  const status = useAppSelector(selectMedicalHistoryStatus);
+
+  useEffect(() => {
+    dispatch(fetchMedicalHistory());
+  }, [dispatch]);
 
   const getVisitTypeColor = (type: string) => {
     switch (type.toLowerCase()) {
@@ -87,9 +42,27 @@ export default function MedicalHistoryView() {
         </View>
       </View>
 
+      {/* Loading State */}
+      {status === 'loading' && (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#4F8EF7" />
+          <Text style={styles.loadingText}>Loading medical history...</Text>
+        </View>
+      )}
+
+      {/* Empty State */}
+      {status === 'succeeded' && medicalHistory.length === 0 && (
+        <View style={styles.centerContainer}>
+          <Feather name="inbox" size={64} color="#ccc" />
+          <Text style={styles.emptyText}>No medical history found</Text>
+          <Text style={styles.emptySubtext}>Your medical records will appear here once available</Text>
+        </View>
+      )}
+
       {/* Timeline */}
-      <View style={{ marginHorizontal: 16, marginTop: 16 }}>
-        {medicalHistory.map((visit, index) => (
+      {status === 'succeeded' && medicalHistory.length > 0 && (
+        <View style={{ marginHorizontal: 16, marginTop: 16 }}>
+          {medicalHistory.map((visit, index) => (
           <View key={visit.id} style={{ marginBottom: 32 }}>
             {/* Timeline Line */}
             {index !== medicalHistory.length - 1 && (
@@ -127,10 +100,10 @@ export default function MedicalHistoryView() {
               {/* Recommendations */}
               <View style={{ marginBottom: 12 }}>
                 <Text style={styles.sectionLabel}>Recommendations</Text>
-                {visit.recommendations.map((rec, idx) => (
-                  <View key={idx} style={styles.recommendationRow}>
+                {visit.recommendations.map((rec) => (
+                  <View key={rec.id} style={styles.recommendationRow}>
                     <View style={styles.recommendationDot} />
-                    <Text style={styles.recommendationText}>{rec}</Text>
+                    <Text style={styles.recommendationText}>{rec.text}</Text>
                   </View>
                 ))}
               </View>
@@ -138,11 +111,11 @@ export default function MedicalHistoryView() {
               {visit.prescriptions.length > 0 && (
                 <View>
                   <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 6 }}>
-                    <Feather name="pill" size={16} color="#4F8EF7" />
+                    <Feather name="package" size={16} color="#4F8EF7" />
                     <Text style={[styles.sectionLabel, { marginLeft: 6 }]}>Prescriptions</Text>
                   </View>
-                  {visit.prescriptions.map((prescription, idx) => (
-                    <View key={idx} style={styles.prescriptionCard}>
+                  {visit.prescriptions.map((prescription) => (
+                    <View key={prescription.id} style={styles.prescriptionCard}>
                       <View>
                         <Text style={styles.prescriptionName}>{prescription.name}</Text>
                         <Text style={styles.prescriptionDetails}>
@@ -160,6 +133,7 @@ export default function MedicalHistoryView() {
           </View>
         ))}
       </View>
+      )}
 
       {/* Info Card */}
       <View style={styles.infoCard}>
@@ -237,5 +211,17 @@ const styles = StyleSheet.create({
     borderRadius: 12, padding: 16, margin: 16
   },
   infoCardTitle: { fontWeight: "bold", color: "#4F8EF7", fontSize: 16, marginBottom: 4 },
-  infoCardDesc: { color: "#222", fontSize: 13 }
+  infoCardDesc: { color: "#222", fontSize: 13 },
+  centerContainer: {
+    flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 80
+  },
+  loadingText: {
+    marginTop: 12, fontSize: 16, color: "#888"
+  },
+  emptyText: {
+    fontSize: 18, fontWeight: "bold", color: "#888", marginTop: 16
+  },
+  emptySubtext: {
+    fontSize: 14, color: "#aaa", marginTop: 8, textAlign: "center", paddingHorizontal: 32
+  }
 });
