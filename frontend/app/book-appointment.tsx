@@ -94,21 +94,32 @@ export default function BookAppointment() {
       // Dispatch create appointment action
       const result = await dispatch(createAppointment(appointmentRequest)).unwrap();
 
-      Alert.alert(
-        "Success",
-        "Appointment booked successfully!",
-        [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]
-      );
+      if(Platform.OS === "web") {
+        router.back();
+        alert("Appointment booked successfully!");
+      } else {
+        Alert.alert(
+          "Success",
+          "Appointment booked successfully!",
+          [
+            {
+              text: "OK",
+              onPress: () => router.back(),
+            },
+          ]
+        );
+      }
     } catch (error) {
-      Alert.alert(
+      // Error message comes from rejectWithValue in the slice
+      const errorMessage = typeof error === 'string' ? error : 'Failed to book appointment. Please try again.';
+      if(Platform.OS === "web") {
+        alert(errorMessage);
+      } else {
+        Alert.alert(
         "Error",
-        `Failed to book appointment: ${error}`
+        errorMessage
       );
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -215,7 +226,7 @@ export default function BookAppointment() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Reason for Visit</Text>
           <InputField
-            label="Reason for Visit"
+            label=""
             value={reasonField.value}
             setValue={reasonField.setValue}
             error={reasonField.error}
@@ -226,7 +237,7 @@ export default function BookAppointment() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Additional Notes (Optional)</Text>
           <InputField
-            label="Additional Notes"
+            label=""
             value={notesField.value}
             setValue={notesField.setValue}
             error={notesField.error}

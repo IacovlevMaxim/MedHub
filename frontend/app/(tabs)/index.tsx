@@ -8,28 +8,20 @@ import {
 } from "react-native";
 import Feather from "react-native-vector-icons/Feather";
 import { useTabs } from "@/app/(tabs)/tabContext";
+import { useRouter } from "expo-router";
+import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { fetchMyAppointments, selectAllAppointments, selectAppointmentsStatus } from "@/features/appointments/appointmentSlice";
 
 export default function PatientDashboard() {
   const { setActiveTab } = useTabs();
+  const router = useRouter();
+  const dispatch = useAppDispatch();
+  const appointments = useAppSelector(selectAllAppointments);
+  const appointmentsStatus = useAppSelector(selectAppointmentsStatus);
 
-  const upcomingAppointments = [
-    {
-      id: 1,
-      date: "2024-09-08",
-      time: "10:30 AM",
-      doctor: "Dr. Sarah Johnson",
-      type: "Cardiology Consultation",
-      status: "confirmed",
-    },
-    {
-      id: 2,
-      date: "2024-09-15",
-      time: "2:00 PM",
-      doctor: "LabCorp",
-      type: "Blood Work",
-      status: "scheduled",
-    },
-  ];
+  React.useEffect(() => {
+    dispatch(fetchMyAppointments());
+  }, [dispatch]);
 
   const recentResults = [
     {
@@ -79,7 +71,7 @@ export default function PatientDashboard() {
             color="#4F8EF7"
             style={styles.statIcon}
           />
-          <Text style={styles.statNumber}>2</Text>
+          <Text style={styles.statNumber}>{appointments?.length || 0}</Text>
           <Text style={styles.statLabel}>Upcoming</Text>
         </View>
         <View style={styles.statCard}>
@@ -100,30 +92,44 @@ export default function PatientDashboard() {
           <Feather name="calendar" size={20} color="#4F8EF7" />
           <Text style={styles.sectionTitle}>Upcoming Appointments</Text>
         </View>
-        {upcomingAppointments.map((appointment) => (
-          <View key={appointment.id} style={styles.appointmentCard}>
-            <View style={styles.appointmentIconBox}>
-              <Feather name="clock" size={24} color="#4F8EF7" />
-            </View>
-            <View style={styles.appointmentInfo}>
-              <Text style={styles.appointmentType}>{appointment.type}</Text>
-              <Text style={styles.appointmentDoctor}>{appointment.doctor}</Text>
-              <Text style={styles.appointmentDate}>
-                {appointment.date} at {appointment.time}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.badge,
-                appointment.status === "confirmed"
-                  ? styles.badgeConfirmed
-                  : styles.badgeScheduled,
-              ]}
-            >
-              <Text style={styles.badgeText}>{appointment.status}</Text>
-            </View>
-          </View>
-        ))}
+        {appointmentsStatus === 'loading' && (
+          <Text style={{ color: '#888' }}>Loading appointments...</Text>
+        )}
+        {appointmentsStatus === 'succeeded' && appointments.filter(a => new Date(a.appointmentDateTime) > new Date()).length === 0 && (
+          <Text style={{ color: '#888' }}>No upcoming appointments.</Text>
+        )}
+        {appointmentsStatus === 'succeeded' && appointments
+          .filter((appointment) => new Date(appointment.appointmentDateTime) > new Date())
+          .sort((a, b) => new Date(a.appointmentDateTime).getTime() - new Date(b.appointmentDateTime).getTime())
+          .map((appointment) => {
+            const dateObj = new Date(appointment.appointmentDateTime);
+            const dateText = dateObj.toLocaleDateString();
+            const timeText = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const statusLabel = appointment.status === 1 ? 'confirmed' : appointment.status === 0 ? 'pending' : appointment.status === 2 ? 'cancelled' : 'completed';
+            const badgeStyle = statusLabel === 'confirmed' ? styles.badgeConfirmed : styles.badgeScheduled;
+            return (
+              <View key={appointment.id} style={styles.appointmentCard}>
+                <View style={styles.appointmentIconBox}>
+                  <Feather name="clock" size={24} color="#4F8EF7" />
+                </View>
+                <View style={styles.appointmentInfo}>
+                  <Text style={styles.appointmentType}>{appointment.title}</Text>
+                  <Text style={styles.appointmentDoctor}>{appointment.doctorName}</Text>
+                  <Text style={styles.appointmentDate}>
+                    {dateText} at {timeText}
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.badge,
+                    badgeStyle,
+                  ]}
+                >
+                  <Text style={styles.badgeText}>{statusLabel}</Text>
+                </View>
+              </View>
+            );
+          })}
       </View>
 
       {/* Recent Results */}
@@ -168,7 +174,7 @@ export default function PatientDashboard() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Quick Actions</Text>
         <View style={styles.actionsRow}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/book-appointment')}>
             <Feather name="calendar" size={24} color="#4F8EF7" />
             <Text style={styles.actionText}>Book Appointment</Text>
           </TouchableOpacity>

@@ -86,6 +86,41 @@ export const fetchAppointments = createAsyncThunk(
   }
 );
 
+export const fetchMyAppointments = createAsyncThunk(
+  'appointments/fetchMy',
+  async (_, { rejectWithValue, getState }) => {
+    try {
+      const state = getState() as RootState;
+      const accessToken = state.auth.accessToken;
+      
+      const response = await fetch(`${backendApi}/api/Appointments/my`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage = `Error ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        return rejectWithValue(errorMessage);
+      }
+      
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      return rejectWithValue((error as Error).message);
+    }
+  }
+);
+
 export const fetchAppointmentById = createAsyncThunk(
   'appointments/fetchById',
   async (id: string, { rejectWithValue, getState }) => {
@@ -147,7 +182,7 @@ export const createAppointment = createAsyncThunk(
       const state = getState() as RootState;
       const accessToken = state.auth.accessToken;
       
-      const response = await fetch(`${backendApi}/api/Appointments/create`, {
+      const response = await fetch(`${backendApi}/api/Appointments/my/create`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -156,8 +191,29 @@ export const createAppointment = createAsyncThunk(
         body: JSON.stringify(appointmentData),
       });
       
+      // Handle 401 - User not authenticated
+      if (response.status === 401) {
+        const errorData = await response.json().catch(() => ({ error: 'User not authenticated.' }));
+        return rejectWithValue(errorData.error || 'User not authenticated.');
+      }
+      
+      // Handle 400 - Validation errors
+      if (response.status === 400) {
+        const errorData = await response.json().catch(() => ({ error: 'Invalid appointment data.' }));
+        return rejectWithValue(errorData.error || 'Invalid appointment data.');
+      }
+      
+      // Handle other errors
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        let errorMessage = `Error ${response.status}: ${response.statusText}`;
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorData.message || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+        return rejectWithValue(errorMessage);
       }
       
       const data = await response.json();
@@ -301,6 +357,20 @@ const appointmentSlice = createSlice({
         state.appointments = action.payload;
       })
       .addCase(fetchAppointments.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error = action.payload as string;
+      })
+
+      // Handle fetchMyAppointments
+      .addCase(fetchMyAppointments.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(fetchMyAppointments.fulfilled, (state, action: PayloadAction<Appointment[]>) => {
+        state.status = 'succeeded';
+        state.appointments = action.payload;
+      })
+      .addCase(fetchMyAppointments.rejected, (state, action) => {
         state.status = 'failed';
         state.error = action.payload as string;
       })
