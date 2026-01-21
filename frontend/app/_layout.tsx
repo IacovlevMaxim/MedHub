@@ -4,6 +4,7 @@ import React from "react";
 import { Alert, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Provider } from "react-redux";
 import Header from "@/components/HomeHeader";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import { store } from "./store";
 import { FontAwesome } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
@@ -82,35 +83,37 @@ export default function RootLayout() {
     TabContent = <AppointmentsView />;
 
   return (
-    <Provider store={store}>
-      <TempCredentialsProvider>
-        <AppointmentsProvider>
-          <View style={styles.container}>
-            {/* Global alert listener */}
-            <AlertComponent />
-            {isTabs ? (
-              <Header
-                userName="Mr. Williamson"
-                onSearchPress={handleSearchPress}
-                onNotificationPress={handleNotificationPress}
-              />
-            ) : (
-              <Stack screenOptions={{ headerShown: true }}>
-                <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="login" />
-                <Stack.Screen name="register" />
-                <Stack.Screen name="reset" />
-                <Stack.Screen name="reset-password" />
-                <Stack.Screen name="confirm-email" />
-                <Stack.Screen name="book-appointment" />
-                <Stack.Screen name="otp-verification" />
-                <Stack.Screen name="change-password" />
-              </Stack>
-            )}
-          </View>
-        </AppointmentsProvider>
-      </TempCredentialsProvider>
-    </Provider>
+    <ErrorBoundary>
+      <Provider store={store}>
+        <TempCredentialsProvider>
+          <AppointmentsProvider>
+            <View style={styles.container}>
+              {/* Global alert listener */}
+              <AlertComponent />
+              {isTabs ? (
+                <Header
+                  userName="Mr. Williamson"
+                  onSearchPress={handleSearchPress}
+                  onNotificationPress={handleNotificationPress}
+                />
+              ) : (
+                <Stack screenOptions={{ headerShown: true }}>
+                  <Stack.Screen name="(tabs)" />
+                  <Stack.Screen name="login" />
+                  <Stack.Screen name="register" />
+                  <Stack.Screen name="reset" />
+                  <Stack.Screen name="reset-password" />
+                  <Stack.Screen name="confirm-email" />
+                  <Stack.Screen name="book-appointment" />
+                  <Stack.Screen name="otp-verification" />
+                  <Stack.Screen name="change-password" />
+                </Stack>
+              )}
+            </View>
+          </AppointmentsProvider>
+        </TempCredentialsProvider>
+      </Provider>
+    </ErrorBoundary>
   );
 }
 

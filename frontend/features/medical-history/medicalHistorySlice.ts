@@ -1,5 +1,4 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { Alert } from 'react-native';
 import { RootState } from '../../app/store';
 
 // Define the API base URL using environment variable
@@ -63,67 +62,14 @@ export const fetchMedicalHistory = createAsyncThunk(
         },
       });
 
-      if (response.status === 401) {
-        Alert.alert(
-          'Authorization Error',
-          'Unable to authorize the user. Please log in again.',
-          [{ text: 'OK' }]
-        );
-        return rejectWithValue('Authorization failed. Please log in again.');
-      }
-      
-      // Handle 403 Forbidden - Authorization error
-      if (response.status === 403) {
-        Alert.alert(
-          'Authorization Error',
-          'You do not have permission to access your medical history. Please log in again.',
-          [{ text: 'OK' }]
-        );
-        return rejectWithValue('Authorization failed. Please log in again.');
-      }
-      
-      // Handle 404 Not Found - Medical history not found
-      if (response.status === 404) {
-        const errorData = await response.json();
-        Alert.alert(
-          'Not Found',
-          errorData.error || 'Medical history record not found.',
-          [{ text: 'OK' }]
-        );
-        return rejectWithValue(errorData.error || 'Medical history record not found.');
-      }
-      
-      // Handle other non-OK responses
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-        
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          // If response is not JSON, use the text or default message
-          errorMessage = errorText || errorMessage;
-        }
-        
-        Alert.alert(
-          'Error',
-          errorMessage,
-          [{ text: 'OK' }]
-        );
-        return rejectWithValue(errorMessage);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      const errorMessage = (error as Error).message;
-      Alert.alert(
-        'Network Error',
-        `Failed to fetch medical history: ${errorMessage}`,
-        [{ text: 'OK' }]
-      );
-      return rejectWithValue(errorMessage);
+      return rejectWithValue('Something went wrong');
     }
   }
 );

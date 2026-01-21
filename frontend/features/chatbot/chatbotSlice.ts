@@ -86,26 +86,7 @@ export const sendChatMessageAsync = createAsyncThunk<
       console.log("response", response);
 
       if (!response.ok) {
-        const contentType = response.headers.get('content-type');
-        let errorMessage = 'Failed to send message. Try logging in again';
-
-        if (contentType && contentType.includes('application/json')) {
-          try {
-            const data = await response.json();
-            errorMessage = data.message || data.error || errorMessage;
-          } catch (e) {
-            console.error('Failed to parse error JSON:', e);
-          }
-        } else {
-          try {
-            const text = await response.text();
-            errorMessage = text || errorMessage;
-          } catch (e) {
-            console.error('Failed to read error text:', e);
-          }
-        }
-
-        return thunkAPI.rejectWithValue(errorMessage);
+        return thunkAPI.rejectWithValue('Something went wrong');
       }
 
       const data = await response.json();
@@ -115,9 +96,7 @@ export const sendChatMessageAsync = createAsyncThunk<
       };
     } catch (error) {
       console.error('Chatbot request error:', error);
-      return thunkAPI.rejectWithValue(
-        error instanceof Error ? error.message : 'Network error occurred'
-      );
+      return thunkAPI.rejectWithValue('Something went wrong');
     }
   }
 );

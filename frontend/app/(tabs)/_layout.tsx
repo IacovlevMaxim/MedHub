@@ -4,7 +4,14 @@ import { useRouter } from "expo-router";
 import { useAppDispatch } from "@/hooks/useRedux";
 
 import { useAppSelector } from "@/hooks/useRedux";
-import { initializeAuthAsync, refreshAccessTokenAsync, selectIsAuthenticated, selectUserRoles, fetchUserRolesAsync, selectUserId } from "@/features/auth/authSlice";
+import {
+  initializeAuthAsync,
+  refreshAccessTokenAsync,
+  selectIsAuthenticated,
+  selectUserRoles,
+  fetchUserRolesAsync,
+  selectUserId,
+} from "@/features/auth/authSlice";
 import { BottomNavigation } from "../navigation-bar";
 import { TabsContext } from "./tabContext";
 import { RoleGuard } from "@/components/RoleGuard";
@@ -17,6 +24,7 @@ import Appointments from "./appointments";
 import Profile from "./profile";
 import ChatBot from "./chatbot";
 import FAQ from "./faq";
+import XRayAnalysis from "./x-ray-analysis";
 // import { AuthGuard } from "@/hooks/useAuth";
 
 const handleSearchPress = () => {
@@ -38,52 +46,61 @@ interface TabConfig {
 const tabConfigs: TabConfig[] = [
   // Common tabs
   {
-    id: 'dashboard',
+    id: "dashboard",
     component: <PatientDashboard />,
-    allowedRoles: ['patient', 'doctor'],
-    label: 'Home',
+    allowedRoles: ["patient", "doctor"],
+    label: "Home",
   },
   // Patient-only tabs
   {
-    id: 'results',
+    id: "results",
     component: <LabResults />,
-    allowedRoles: ['patient'],
-    label: 'Results',
+    allowedRoles: ["patient"],
+    label: "Results",
   },
   {
-    id: 'chat',
+    id: "chat",
     component: <ChatBot />,
-    allowedRoles: ['patient'],
-    label: 'Chatbot',
+    allowedRoles: ["patient"],
+    label: "Chatbot",
   },
   // Doctor-only tabs
   {
-    id: 'history',
+    id: "history",
     component: <MedicalHistory />,
-    allowedRoles: ['doctor'],
-    label: 'History',
+    allowedRoles: ["doctor"],
+    label: "History",
   },
   {
-    id: 'appointments',
+    id: "appointments",
     component: <Appointments />,
-    allowedRoles: ['doctor'],
-    label: 'Appointments',
+    allowedRoles: ["doctor"],
+    label: "Appointments",
+  },
+  {
+    id: "xray",
+    component: <XRayAnalysis />,
+    allowedRoles: ["doctor"],
+    label: "X-Ray",
   },
   // Additional tabs (not in bottom nav)
   {
-    id: 'profile',
+    id: "profile",
     component: <Profile />,
-    allowedRoles: ['patient', 'doctor'],
+    allowedRoles: ["patient", "doctor"],
   },
   {
-    id: 'faq',
+    id: "faq",
     component: <FAQ />,
-    allowedRoles: ['patient', 'doctor'],
+    allowedRoles: ["patient", "doctor"],
   },
 ];
 
-const tabComponents: Record<string, { component: React.ReactNode; allowedRoles: string[] }> = {};
-tabConfigs.forEach(config => {
+const tabComponents: Record<
+  string,
+  { component: React.ReactNode; allowedRoles: string[] }
+> = {};
+tabConfigs.forEach((config) => {
   tabComponents[config.id] = {
     component: config.component,
     allowedRoles: config.allowedRoles,
@@ -100,11 +117,15 @@ export default function TabLayout() {
 
   // Get first accessible tab for the user
   const getDefaultTab = () => {
-    const normalizedRoles = userRoles.map(r => r.toLowerCase());
-    const accessibleTab = tabConfigs.find(tab => 
-      tab.label && tab.allowedRoles.some(role => normalizedRoles.includes(role.toLowerCase()))
+    const normalizedRoles = userRoles.map((r) => r.toLowerCase());
+    const accessibleTab = tabConfigs.find(
+      (tab) =>
+        tab.label &&
+        tab.allowedRoles.some((role) =>
+          normalizedRoles.includes(role.toLowerCase()),
+        ),
     );
-    return accessibleTab?.id || 'dashboard';
+    return accessibleTab?.id || "dashboard";
   };
 
   useEffect(() => {
@@ -148,7 +169,7 @@ export default function TabLayout() {
 
   // Set default tab based on user role when roles are loaded
   useEffect(() => {
-    if (userRoles.length > 0 && activeTab === 'dashboard') {
+    if (userRoles.length > 0 && activeTab === "dashboard") {
       const defaultTab = getDefaultTab();
       if (defaultTab !== activeTab) {
         setActiveTab(defaultTab);
@@ -156,16 +177,18 @@ export default function TabLayout() {
     }
   }, [userRoles]);
 
-  if(!isAuthenticated) {
-      return (
-        <View style={styles.container}>
-          <Text style={{textAlign: 'center', marginTop: 50}}>Trying to login...</Text>
-        </View>
-      );
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.container}>
+        <Text style={{ textAlign: "center", marginTop: 50 }}>
+          Trying to login...
+        </Text>
+      </View>
+    );
   }
 
   const currentTabConfig = tabComponents[activeTab];
-  
+
   return (
     <TabsContext.Provider value={{ activeTab, setActiveTab }}>
       <View style={styles.container}>
@@ -196,12 +219,12 @@ const styles = StyleSheet.create({
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F5F6FA',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F5F6FA",
   },
   errorText: {
     fontSize: 18,
-    color: '#222',
+    color: "#222",
   },
 });
