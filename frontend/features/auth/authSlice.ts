@@ -61,13 +61,7 @@ export const forgotPasswordAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      try {
-        const data = await response.json();
-        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to send reset link');
-      } catch {
-        const text = await response.text();
-        return thunkAPI.rejectWithValue(text || 'Failed to send reset link');
-      }
+      return thunkAPI.rejectWithValue('Something went wrong');
     }
 
     const data = await response.json();
@@ -92,13 +86,7 @@ export const confirmEmailAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      try {
-        const data = await response.json();
-        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to confirm email');
-      } catch {
-        const text = await response.text();
-        return thunkAPI.rejectWithValue(text || 'Failed to confirm email');
-      }
+      return thunkAPI.rejectWithValue('Something went wrong');
     }
 
     const data = await response.json();
@@ -122,13 +110,7 @@ export const resetPasswordAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      try {
-        const data = await response.json();
-        return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to reset password');
-      } catch {
-        const text = await response.text();
-        return thunkAPI.rejectWithValue(text || 'Failed to reset password');
-      }
+      return thunkAPI.rejectWithValue('Something went wrong');
     }
 
     const data = await response.json();
@@ -153,13 +135,7 @@ export const registerAsync = createAsyncThunk<
     });
 
     if (!response.ok) {
-      try {
-        const data = await response.json();
-        return thunkAPI.rejectWithValue(data.message || data.error || 'Registration failed');
-      } catch {
-        const text = await response.text();
-        return thunkAPI.rejectWithValue(text || 'Registration failed');
-      }
+      return thunkAPI.rejectWithValue('Something went wrong');
     }
 
     const data = await response.json();
@@ -186,13 +162,7 @@ export const refreshAccessTokenAsync = createAsyncThunk<
   });
 
   if (!response.ok) {
-    try {
-      const data = await response.json();
-      return rejectWithValue(data.message || data.error || 'Failed to refresh token');
-    } catch {
-      const text = await response.text();
-      return rejectWithValue(text || 'Failed to refresh token');
-    }
+    return rejectWithValue('Something went wrong');
   }
 
   const data = await response.json();
@@ -223,13 +193,7 @@ export const loginAsync = createAsyncThunk<
   }
 
   if (!response.ok) {
-    try {
-      const data = await response.json();
-      return thunkAPI.rejectWithValue(data.message || data.error || 'Login failed');
-    } catch {
-      const text = await response.text();
-      return thunkAPI.rejectWithValue(text || 'Login failed');
-    }
+    return thunkAPI.rejectWithValue('Something went wrong');
   }
 
   const data = await response.json();
@@ -256,13 +220,7 @@ export const verifyOtpAsync = createAsyncThunk<
   });
 
   if (!response.ok) {
-    try {
-      const data = await response.json();
-      return thunkAPI.rejectWithValue(data.message || data.error || 'Invalid OTP code');
-    } catch {
-      const text = await response.text();
-      return thunkAPI.rejectWithValue(text || 'Invalid OTP code');
-    }
+    return thunkAPI.rejectWithValue('Something went wrong');
   }
 
   const data = await response.json();
@@ -299,15 +257,7 @@ export const configure2FAAsync = createAsyncThunk<
   }
 
   if (!response.ok) {
-    const text = await response.text();
-    let errorMessage = '2FA configuration failed';
-    try {
-      const data = JSON.parse(text);
-      errorMessage = data.message || data.error || errorMessage;
-    } catch {
-      errorMessage = text || errorMessage;
-    }
-    return thunkAPI.rejectWithValue(errorMessage);
+    return thunkAPI.rejectWithValue('Something went wrong');
   }
 
   const data = await response.json();
@@ -357,13 +307,7 @@ export const fetchUserRolesAsync = createAsyncThunk<
   });
 
   if (!response.ok) {
-    try {
-      const data = await response.json();
-      return thunkAPI.rejectWithValue(data.message || data.error || 'Failed to fetch user roles');
-    } catch {
-      const text = await response.text();
-      return thunkAPI.rejectWithValue(text || 'Failed to fetch user roles');
-    }
+    return thunkAPI.rejectWithValue('Something went wrong');
   }
 
   const data = await response.json();
@@ -460,7 +404,7 @@ export const authSlice = createSlice({
       })
       .addCase(forgotPasswordAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as string) || action.error.message || 'Failed to send reset link';
+        state.error = 'Something went wrong';
       })
       .addCase(resetPasswordAsync.pending, (state) => {
         state.status = 'loading';
@@ -472,7 +416,7 @@ export const authSlice = createSlice({
       })
       .addCase(resetPasswordAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as string) || action.error.message || 'Failed to reset password';
+        state.error = 'Something went wrong';
       })
       .addCase(confirmEmailAsync.pending, (state) => {
         state.status = 'loading';
@@ -484,7 +428,7 @@ export const authSlice = createSlice({
       })
       .addCase(confirmEmailAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as string) || action.error.message || 'Failed to confirm email';
+        state.error = 'Something went wrong';
       })
       .addCase(registerAsync.pending, (state) => {
         state.status = 'loading';
@@ -503,7 +447,7 @@ export const authSlice = createSlice({
       .addCase(registerAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.isAuthenticated = false;
-        state.error = (action.payload as string) || action.error.message || 'Registration failed';
+        state.error = 'Something went wrong';
       })
       .addCase(refreshAccessTokenAsync.pending, (state) => {
         state.status = 'loading';
@@ -522,7 +466,7 @@ export const authSlice = createSlice({
         state.accessToken = null;
         state.accessTokenExpiresAt = null;
         state.isAuthenticated = false;
-        state.error = (action.payload as string) || action.error.message || 'Failed to refresh token';
+        state.error = 'Something went wrong';
       })
       .addCase(loginAsync.pending, (state) => {
         state.status = 'loading';
@@ -547,7 +491,7 @@ export const authSlice = createSlice({
       .addCase(loginAsync.rejected, (state, action) => {
         state.status = 'failed';
         state.isAuthenticated = false;
-        state.error = (action.payload as string) || action.error.message || 'Login failed';
+        state.error = 'Something went wrong';
       })
       .addCase(verifyOtpAsync.pending, (state) => {
         state.status = 'loading';
@@ -564,7 +508,7 @@ export const authSlice = createSlice({
       })
       .addCase(verifyOtpAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as string) || action.error.message || 'Invalid OTP code';
+        state.error = 'Something went wrong';
       })
       .addCase(configure2FAAsync.pending, (state) => {
         state.status = 'loading';
@@ -583,7 +527,7 @@ export const authSlice = createSlice({
       })
       .addCase(configure2FAAsync.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = (action.payload as string) || action.error.message || '2FA configuration failed';
+        state.error = 'Something went wrong';
       })
       .addCase(get2FAStatusAsync.fulfilled, (state) => {
         state.status = 'idle';
