@@ -98,7 +98,7 @@ export default function Reset() {
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.cardTitle}>Send reset link</Text>
+            <Text style={styles.cardTitle}>Get reset link</Text>
             <ErrorBanner message={error} />
             <View style={styles.form}>
               <InputField
