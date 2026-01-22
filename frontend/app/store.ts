@@ -2,6 +2,7 @@ import {configureStore, ThunkAction, Action, createListenerMiddleware} from '@re
 import authReducer, { loginAsync, verifyOtpAsync, initializeAuthAsync, fetchUserRolesAsync } from '../features/auth/authSlice';
 import appointmentReducer from '../features/appointments/appointmentSlice';
 import chatbotReducer from '../features/chatbot/chatbotSlice';
+import medicalHistoryReducer from '../features/medical-history/medicalHistorySlice';
 
 // Create listener middleware for fetching user roles after auth actions
 const listenerMiddleware = createListenerMiddleware();
@@ -48,7 +49,8 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     appointments: appointmentReducer,
-    chatbot: chatbotReducer
+    chatbot: chatbotReducer,
+    medicalHistory: medicalHistoryReducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().prepend(listenerMiddleware.middleware),
