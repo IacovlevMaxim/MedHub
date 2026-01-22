@@ -9,7 +9,7 @@
     "ios": "expo run:ios --port 5173",
     "web": "expo start --web --port 5173",
     "lint": "expo lint",
-    "test": "jest"
+    "test": "jest && npx playwright test"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
