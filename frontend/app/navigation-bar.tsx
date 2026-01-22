@@ -18,12 +18,38 @@ interface Tab {
 
 const tabs: Tab[] = [
   // Patient tabs
-  { id: "dashboard", label: "Home", icon: "home", allowedRoles: ["patient", "doctor"] },
-  { id: "results", label: "Results", icon: "activity", allowedRoles: ["patient"] },
-  { id: "chat", label: "Chatbot", icon: "message-circle", allowedRoles: ["patient"] },
+  {
+    id: "dashboard",
+    label: "Home",
+    icon: "home",
+    allowedRoles: ["patient", "doctor"],
+  },
+  {
+    id: "results",
+    label: "Results",
+    icon: "activity",
+    allowedRoles: ["patient"],
+  },
+  {
+    id: "chat",
+    label: "Chatbot",
+    icon: "message-circle",
+    allowedRoles: ["patient"],
+  },
   // Doctor tabs
-  { id: "history", label: "History", icon: "file-text", allowedRoles: ["patient", "doctor"] },
-  { id: "appointments", label: "Appointments", icon: "calendar", allowedRoles: ["doctor"] },
+  {
+    id: "history",
+    label: "History",
+    icon: "file-text",
+    allowedRoles: ["patient", "doctor"],
+  },
+  {
+    id: "appointments",
+    label: "Appointments",
+    icon: "calendar",
+    allowedRoles: ["doctor"],
+  },
+  { id: "xray", label: "X-Ray", icon: "crosshair", allowedRoles: ["doctor"] },
 ];
 
 export function BottomNavigation({
@@ -31,11 +57,16 @@ export function BottomNavigation({
   onTabChange,
 }: BottomNavigationProps) {
   const userRoles = useAppSelector(selectUserRoles);
-  const normalizedRoles = userRoles.length === 0 ? ["patient"] : userRoles.map(r => r.toLowerCase());
+  const normalizedRoles =
+    userRoles.length === 0
+      ? ["patient"]
+      : userRoles.map((r) => r.toLowerCase());
 
   // Filter tabs based on user roles
-  const visibleTabs = tabs.filter(tab =>
-    tab.allowedRoles.some(role => normalizedRoles.includes(role.toLowerCase()))
+  const visibleTabs = tabs.filter((tab) =>
+    tab.allowedRoles.some((role) =>
+      normalizedRoles.includes(role.toLowerCase()),
+    ),
   );
 
   return (

@@ -75,13 +75,13 @@ export const fetchAppointments = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -102,21 +102,13 @@ export const fetchMyAppointments = createAsyncThunk(
       });
       
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        return rejectWithValue(errorMessage);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -137,13 +129,13 @@ export const fetchAppointmentById = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -164,13 +156,13 @@ export const fetchUserAppointments = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -191,35 +183,14 @@ export const createAppointment = createAsyncThunk(
         body: JSON.stringify(appointmentData),
       });
       
-      // Handle 401 - User not authenticated
-      if (response.status === 401) {
-        const errorData = await response.json().catch(() => ({ error: 'User not authenticated.' }));
-        return rejectWithValue(errorData.error || 'User not authenticated.');
-      }
-      
-      // Handle 400 - Validation errors
-      if (response.status === 400) {
-        const errorData = await response.json().catch(() => ({ error: 'Invalid appointment data.' }));
-        return rejectWithValue(errorData.error || 'Invalid appointment data.');
-      }
-      
-      // Handle other errors
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorMessage = `Error ${response.status}: ${response.statusText}`;
-        try {
-          const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorData.message || errorMessage;
-        } catch {
-          errorMessage = errorText || errorMessage;
-        }
-        return rejectWithValue(errorMessage);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -241,13 +212,13 @@ export const updateAppointment = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -268,13 +239,13 @@ export const confirmAppointment = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -295,13 +266,13 @@ export const cancelAppointment = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       const data = await response.json();
       return data;
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
@@ -322,12 +293,12 @@ export const deleteAppointment = createAsyncThunk(
       });
       
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        return rejectWithValue('Something went wrong');
       }
       
       return id; // Return the ID for the reducer to remove from state
     } catch (error) {
-      return rejectWithValue((error as Error).message);
+      return rejectWithValue('Something went wrong');
     }
   }
 );
